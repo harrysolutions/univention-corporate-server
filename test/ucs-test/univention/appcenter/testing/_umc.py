@@ -59,7 +59,7 @@ def _get_useragent():
 
 def _get_fqdn():
 	ucr = _get_ucr()
-	return '%s.%s' % (ucr.get('hostname'), ucr.get('domainname'))
+	return '%(hostname)s.%(domainname)s' % ucr
 
 
 class _HTTPType(type):

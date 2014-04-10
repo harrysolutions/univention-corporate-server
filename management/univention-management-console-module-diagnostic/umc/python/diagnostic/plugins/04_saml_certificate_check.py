@@ -110,9 +110,9 @@ def test_service_provider_certificate():
 	#
 	# fails because https://help.univention.com/t/renewing-the-ssl-certificates/37 was not used. https://help.univention.com/t/renewing-the-complete-ssl-certificate-chain/36
 	lo = univention.uldap.getMachineConnection()
-	certs = lo.search(filter_format('(&(serviceProviderMetadata=*)(univentionObjectType=saml/serviceprovider)(SAMLServiceProviderIdentifier=https://%s/univention/saml/metadata))', ['%s.%s' % (ucr.get('hostname'), ucr.get('domainname'))]), attr=['serviceProviderMetadata'])
-	MODULE.process("Checking certificates of /etc/univention/ssl/%s.%s/cert.pem" % (ucr.get('hostname'), ucr.get('domainname')))
-	with open('/etc/univention/ssl/%s.%s/cert.pem' % (ucr.get('hostname'), ucr.get('domainname'))) as fd:
+	certs = lo.search(filter_format('(&(serviceProviderMetadata=*)(univentionObjectType=saml/serviceprovider)(SAMLServiceProviderIdentifier=https://%s/univention/saml/metadata))', ['%(hostname)s.%(domainname)s' % ucr]), attr=['serviceProviderMetadata'])
+	MODULE.process("Checking certificates of /etc/univention/ssl/%(hostname)s.%(domainname)s/cert.pem" % ucr)
+	with open('/etc/univention/ssl/%(hostname)s.%(domainname)s/cert.pem' % ucr) as fd:
 		for cert in certs:
 			cert = find_node(fromstring(cert[1]['serviceProviderMetadata'][0].decode('UTF-8')), '{http://www.w3.org/2000/09/xmldsig#}X509Certificate')
 			if cert.text.strip() not in fd.read():

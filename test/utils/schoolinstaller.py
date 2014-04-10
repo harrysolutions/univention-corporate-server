@@ -42,7 +42,7 @@ ucr.load()
 
 parser = ArgumentParser()
 parser.add_argument(
-	'-H', '--host', default='%s.%s' % (ucr.get('hostname'), ucr.get('domainname')),
+	'-H', '--host', default='%(hostname)s.%(domainname)s' % ucr,
 	help='host to connect to', metavar='HOST')
 parser.add_argument(
 	'-u', '--user', dest='username',
