@@ -74,10 +74,6 @@ class BaseDirRestriction(InvalidZone):
 	pass
 
 
-def initialize():
-	"""Initialize module on first run."""
-
-
 def prerun():
 	# type: () -> None
 	"""Called before busy period."""
