@@ -116,7 +116,7 @@ def writeConfig(fqdn: bytes, new: Dict[str, List[bytes]]) -> None:
 		fp.write('#          automatisch ueberschrieben. Bitte benutzen Sie\n')
 		fp.write('#          stattdessen den Univention Directory Manager.\n')
 		fp.write('\n')
-		fp.write('command[%s]=%s\n' % (name, cmdline))
+		fp.write('command[%s]=%s\n' % (name, cmdline))  # FIXME cmdline.decode('utf-8')
 		fp.close()
 
 		univention.debug.debug(univention.debug.LISTENER, univention.debug.INFO, 'NAGIOS-CLIENT: service %s written' % name)
@@ -139,8 +139,7 @@ def handler(dn: str, new: Dict[str, List[bytes]], old: Dict[str, List[bytes]]) -
 	# univention.debug.debug(univention.debug.LISTENER, univention.debug.INFO, 'NAGIOS-CLIENT: IN old=%r' % (old,))
 	# univention.debug.debug(univention.debug.LISTENER, univention.debug.INFO, 'NAGIOS-CLIENT: IN new=%r' % (new,))
 
-	fqdn = '%s.%s' % (listener.configRegistry['hostname'], listener.configRegistry['domainname'])
-	fqdn = fqdn.encode('UTF-8')
+	fqdn = ('%(hostname)s.%(domainname)s' % listener.configRegistry).encode('UTF-8')
 
 	if old and not new:
 		univention.debug.debug(univention.debug.LISTENER, univention.debug.INFO, 'NAGIOS-CLIENT: service %r deleted' % (old['cn'][0],))
