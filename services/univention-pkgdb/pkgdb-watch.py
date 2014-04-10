@@ -32,6 +32,8 @@
 
 from __future__ import absolute_import, annotations
 
+from typing import Any, Dict, List
+
 import univention.config_registry as ucr
 import univention.debug as ud
 import univention.pkgdb
@@ -42,10 +44,10 @@ name = 'pkgdb-watch'
 description = 'watches the availability of the software monitor service'
 filter = '(|(objectClass=univentionDomainController)(objectClass=univentionMemberServer))'
 attributes = ['univentionService']
-ldap_info = {}
+ldap_info: Dict[str, Any] = {}
 
 
-def handler(dn: str, new: dict, old: dict) -> None:
+def handler(dn: str, new: Dict[str, List[bytes]], old: Dict[str, List[bytes]]) -> None:
 	if new and b'Software Monitor' in new.get('univentionService', ()):
 		with SetUID(0):
 			ucr.handler_set(('pkgdb/scan=yes', ))

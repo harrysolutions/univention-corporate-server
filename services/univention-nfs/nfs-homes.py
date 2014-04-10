@@ -35,6 +35,7 @@ from __future__ import absolute_import, annotations
 
 import os
 import stat
+from typing import Dict, List
 
 import listener
 import univention.debug as ud
@@ -49,7 +50,7 @@ filter = "(&(objectClass=posixAccount)(automountInformation=*))"
 attributes = ["uid", "automountInformation", "gidNumber", "uidNumber"]
 
 
-def handler(dn: str, new: dict, old: dict) -> None:
+def handler(dn: str, new: Dict[str, List[bytes]], old: Dict[str, List[bytes]]) -> None:
 	if not listener.configRegistry.is_true("nfs/create/homesharepath"):
 		return
 

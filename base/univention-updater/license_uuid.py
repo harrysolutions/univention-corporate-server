@@ -33,7 +33,7 @@
 
 from __future__ import absolute_import
 
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 import listener
 import univention.config_registry
@@ -43,7 +43,7 @@ description = 'Dump key id from license to local UCR variable'
 filter = '(&(objectClass=univentionLicense)(cn=admin))'
 
 
-def handler(dn: str, new: Optional[Dict[str, List[bytes]]], old: Optional[Dict[str, List[bytes]]]) -> None:
+def handler(dn: str, new: Dict[str, List[bytes]], old: Dict[str, List[bytes]]) -> None:
     if new:
         listener.setuid(0)
         try:

@@ -32,6 +32,8 @@
 
 from __future__ import absolute_import, annotations
 
+from typing import Dict, List
+
 import univention.debug as ud
 from listener import configRegistry as ucr, run
 
@@ -54,7 +56,7 @@ filter = '''(|
 	)'''.replace('\n', '').replace('\t', '')
 
 
-def handler(dn: str, new: dict, old: dict) -> None:
+def handler(dn: str, new: Dict[str, List[bytes]], old: Dict[str, List[bytes]]) -> None:
 	pass
 
 

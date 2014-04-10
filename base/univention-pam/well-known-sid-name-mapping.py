@@ -35,6 +35,7 @@ from __future__ import absolute_import, annotations
 
 import os
 import os.path
+from typing import Dict, List, Optional
 
 import six
 from six.moves import cPickle as pickle
@@ -56,7 +57,7 @@ ucr.load()
 modified_default_names = []
 
 
-def sidToName(sid):
+def sidToName(sid: str) -> Optional[str]:
 	rid = sid.split("-")[-1]
 	if univention.lib.s4.well_known_sids.get(sid):
 		return univention.lib.s4.well_known_sids[sid]
@@ -65,7 +66,7 @@ def sidToName(sid):
 	return None
 
 
-def checkAndSet(new, old):
+def checkAndSet(new: Dict[str, List[bytes]], old: Dict[str, List[bytes]]) -> Optional[str]:
 	obj = new or old
 	if not obj:
 		return
@@ -134,7 +135,7 @@ def checkAndSet(new, old):
 			listener.unsetuid()
 
 
-def no_relevant_change(new: dict, old: dict) -> bool:
+def no_relevant_change(new: Dict[str, List[bytes]], old: Dict[str, List[bytes]]) -> bool:
 	assert new
 	assert old
 
@@ -155,7 +156,7 @@ def no_relevant_change(new: dict, old: dict) -> bool:
 	return (set(old_name) == set(new_name)) and (set(old_sid) == set(new_sid))
 
 
-def handler(dn: str, new: dict, old: dict, command: str) -> None:
+def handler(dn: str, new: Dict[str, List[bytes]], old: Dict[str, List[bytes]], command: str) -> None:
 	global modified_default_names
 
 	if ucr.is_false("listener/module/wellknownsidnamemapping", False):

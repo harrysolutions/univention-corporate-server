@@ -34,6 +34,7 @@ from __future__ import absolute_import, annotations
 
 import os
 import subprocess
+from typing import Dict, List
 
 import listener
 import univention.debug as ud
@@ -47,7 +48,7 @@ schema_handler = ldap_extension.UniventionLDAPSchema(listener.configRegistry)
 acl_handler = ldap_extension.UniventionLDAPACL(listener.configRegistry)
 
 
-def handler(dn: str, new: dict, old: dict) -> None:
+def handler(dn: str, new: Dict[str, List[bytes]], old: Dict[str, List[bytes]]) -> None:
 	"""Handle LDAP schema extensions on Primary and Backup"""
 	global schema_handler, acl_handler
 

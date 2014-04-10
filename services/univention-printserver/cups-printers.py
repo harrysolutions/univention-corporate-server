@@ -36,6 +36,7 @@ import os
 import pipes
 import subprocess
 import time
+from typing import Dict, List, Optional
 
 from ldap.dn import str2dn
 
@@ -97,7 +98,7 @@ def _join_basedir_filename(basedir: str, filename: str) -> str:
 	return _filename
 
 
-def lpadmin(args: list) -> None:
+def lpadmin(args: List[str]) -> None:
 	quoted_args = [pipes.quote(x) for x in args]
 
 	# Show this info message by default
@@ -113,7 +114,7 @@ def lpadmin(args: list) -> None:
 			fd.write('/usr/sbin/univention-lpadmin %s\n' % (' '.join(quoted_args),))
 
 
-def filter_match(object: dict) -> bool:
+def filter_match(object: Dict[str, List[bytes]]) -> bool:
 	fqdn = ('%s.%s' % (hostname, domainname)).lower()
 	for host in object.get('univentionPrinterSpoolHost', ()):
 		if host.decode('ASCII').lower() in (ip.lower(), fqdn):
@@ -121,7 +122,7 @@ def filter_match(object: dict) -> bool:
 	return False
 
 
-def get_testparm_var(smbconf: str, sectionname: str, varname: str) -> str:
+def get_testparm_var(smbconf: str, sectionname: str, varname: str) -> Optional[str]:
 	if not os.path.exists("/usr/bin/testparm"):
 		return
 
@@ -136,7 +137,7 @@ def testparm_is_true(smbconf: str, sectionname: str, varname: str) -> bool:
 	return testpram_output.lower() in ('yes', 'true', '1', 'on')
 
 
-def handler(dn: str, new: dict, old: dict) -> None:
+def handler(dn: str, new: Dict[str, List[bytes]], old: Dict[str, List[bytes]]) -> None:
 	change_affects_this_host = False
 	need_to_reload_samba = False
 	need_to_reload_cups = False
@@ -327,7 +328,7 @@ def handler(dn: str, new: dict, old: dict) -> None:
 				ud.debug(ud.LISTENER, ud.ERROR, "Invalid printer share name: %r. Ignoring!" % (printername,))
 				return
 
-			def _quote(arg):
+			def _quote(arg: str) -> str:
 				if ' ' in arg:
 					arg = '"%s"' % (arg.replace('"', '\\"'),)
 				return arg.replace('\n', '')

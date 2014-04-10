@@ -60,7 +60,7 @@ SHARE_CACHE_DIR = '/var/cache/univention-quota/'
 SHARE_CACHE_TODO_DIR = '/var/cache/univention-quota/todo'
 
 
-def _dump_share_and_policy_result(dn, share_object, policy_result):
+def _dump_share_and_policy_result(dn: str, share_object: Dict[str, List[bytes]], policy_result: Dict[str, List[bytes]]) -> None:
 	filename = os.path.join(SHARE_CACHE_DIR, dn)
 
 	with open(filename, 'wb+') as fd:
@@ -70,7 +70,7 @@ def _dump_share_and_policy_result(dn, share_object, policy_result):
 		p.clear_memo()
 
 
-def _read_share_and_policy_result(dn: str) -> Tuple:
+def _read_share_and_policy_result(dn: str) -> Tuple[Optional[Dict[str, List[bytes]]], Optional[Dict[str, List[bytes]]]]:
 	filename = os.path.join(SHARE_CACHE_DIR, dn)
 
 	if not os.path.exists(filename):
@@ -89,7 +89,7 @@ def _remove_cache_for_share(dn: str) -> None:
 		os.remove(filename)
 
 
-def _is_share(new: Optional[Dict[str, List[bytes]]], old: Optional[Dict[str, List[bytes]]]) -> bool:
+def _is_share(new: Dict[str, List[bytes]], old: Dict[str, List[bytes]]) -> bool:
 	if new and b'univentionShare' in new['objectClass']:
 		return True
 	if old and b'univentionShare' in old['objectClass']:
@@ -97,7 +97,7 @@ def _is_share(new: Optional[Dict[str, List[bytes]]], old: Optional[Dict[str, Lis
 	return False
 
 
-def _is_quota_policy(new: Optional[Dict[str, List[bytes]]], old: Optional[Dict[str, List[bytes]]]) -> bool:
+def _is_quota_policy(new: Dict[str, List[bytes]], old: Dict[str, List[bytes]]) -> bool:
 	if new and b'univentionPolicyShareUserQuota' in new['objectClass']:
 		return True
 	if old and b'univentionPolicyShareUserQuota' in old['objectClass']:
@@ -105,7 +105,7 @@ def _is_quota_policy(new: Optional[Dict[str, List[bytes]]], old: Optional[Dict[s
 	return False
 
 
-def _is_container(new: Optional[Dict[str, List[bytes]]], old: Optional[Dict[str, List[bytes]]]) -> bool:
+def _is_container(new: Dict[str, List[bytes]], old: Dict[str, List[bytes]]) -> bool:
 	for oc in [b'organizationalRole', b'organizationalUnit', b'univentionBase']:
 		if new and oc in new['objectClass']:
 			return True
@@ -123,7 +123,7 @@ def _get_ldap_connection() -> univention.uldap.access:
 	return connection
 
 
-def _is_container_change_relevant(new: Optional[Dict[str, List[bytes]]], old: Optional[Dict[str, List[bytes]]]) -> bool:
+def _is_container_change_relevant(new: Dict[str, List[bytes]], old: Dict[str, List[bytes]]) -> bool:
 	new_reference = new.get('univentionPolicyReference', []) if new else []
 	old_reference = old.get('univentionPolicyReference', []) if old else []
 
@@ -152,7 +152,7 @@ def _get_fqdn() -> str:
 	return '%s.%s' % (listener.configRegistry['hostname'], listener.configRegistry['domainname'])
 
 
-def _is_share_used_on_this_server(new: Optional[Dict[str, List[bytes]]], old: Optional[Dict[str, List[bytes]]]) -> bool:
+def _is_share_used_on_this_server(new: Dict[str, List[bytes]], old: Dict[str, List[bytes]]) -> bool:
 	fqdn = _get_fqdn().encode('ASCII')
 	if new and fqdn in new['univentionShareHost']:
 		return True
@@ -184,7 +184,7 @@ def _get_all_quota_references(dn: str) -> List[Tuple[str, Dict[str, List[bytes]]
 	return references
 
 
-def handler(dn: str, new: Optional[Dict[str, List[bytes]]], old: Optional[Dict[str, List[bytes]]]) -> None:
+def handler(dn: str, new: Dict[str, List[bytes]], old: Dict[str, List[bytes]]) -> None:
 	ud.debug(ud.LISTENER, ud.INFO, 'Run handler for dn: %r' % dn)
 	listener.setuid(0)
 	try:

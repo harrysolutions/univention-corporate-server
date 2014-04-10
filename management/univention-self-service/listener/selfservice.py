@@ -33,6 +33,8 @@
 from __future__ import absolute_import, annotations
 
 
+from typing import Dict, List
+
 import listener
 import univention.config_registry
 
@@ -43,7 +45,7 @@ filter = '(univentionService=univention-self-service)'
 UCRV = 'umc/self-service/passwordreset/email/webserver_address'
 
 
-def handler(dn: str, new: dict, old: dict) -> None:
+def handler(dn: str, new: Dict[str, List[bytes]], old: Dict[str, List[bytes]]) -> None:
 	if new:
 		ucr = univention.config_registry.ConfigRegistry()
 		ucr.load()

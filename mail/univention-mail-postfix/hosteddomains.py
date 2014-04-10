@@ -34,6 +34,7 @@
 from __future__ import absolute_import, annotations
 
 import re
+from typing import Dict, List
 
 import listener
 import univention.config_registry
@@ -44,7 +45,7 @@ description = 'update mail/hosteddomains'
 filter = '(objectClass=univentionMailDomainname)'
 
 
-def handler(dn: str, new: dict, old: dict) -> None:
+def handler(dn: str, new: Dict[str, List[bytes]], old: Dict[str, List[bytes]]) -> None:
 	configRegistry = univention.config_registry.ConfigRegistry()
 	configRegistry.load()
 

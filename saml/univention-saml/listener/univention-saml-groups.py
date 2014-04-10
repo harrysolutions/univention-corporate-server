@@ -37,6 +37,7 @@ import json
 import os
 import pwd
 import shutil
+from typing import Dict, List
 
 import listener
 
@@ -50,7 +51,7 @@ uid = pwd.getpwnam("samlcgi").pw_uid
 gid = grp.getgrnam("samlcgi").gr_gid
 
 
-def handler(dn: str, new: dict, old: dict) -> None:
+def handler(dn: str, new: Dict[str, List[bytes]], old: Dict[str, List[bytes]]) -> None:
 	listener.setuid(0)
 
 	try:

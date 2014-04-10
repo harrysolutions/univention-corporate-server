@@ -36,6 +36,9 @@ import base64
 import grp
 import hashlib
 import os
+import syslog
+import time
+from typing import Dict, List, Tuple
 
 import univention.debug
 from listener import SetUID, configRegistry
@@ -65,7 +68,7 @@ digest = configRegistry.get('ldap/logging/hash', 'md5')
 SAFE_STRING_RE = re.compile(r'^(?:\000|\n|\r| |:|<)|[\000\n\r\200-\377]+|[ ]+$'.encode('ASCII'))
 
 
-def ldapEntry2string(entry: dict) -> str:
+def ldapEntry2string(entry: Dict[str, List[bytes]]) -> str:
 	# TODO: we don't know the encoding of the attribute, therefore every non-ASCII value must be base64
 	return ''.join(
 		'%s:: %s\n' % (key, base64.standard_b64encode(value).decode('ASCII'))
@@ -85,7 +88,7 @@ def ldapTime2string(timestamp: str) -> str:
 	return time.strftime(timestampfmt, timestruct)
 
 
-def filterOutUnchangedAttributes(old_copy, new_copy):
+def filterOutUnchangedAttributes(old_copy: Dict[str, List[bytes]], new_copy: Dict[str, List[bytes]]) -> None:
 	for key in list(old_copy):
 		if key not in new_copy:
 			continue
@@ -104,7 +107,7 @@ def filterOutUnchangedAttributes(old_copy, new_copy):
 			new_copy[key].remove(value)
 
 
-def process_dellog(dn):
+def process_dellog(dn: str) -> Tuple[str, str, str, str]:
 	dellog = configRegistry['ldap/logging/dellogdir']
 
 	dellist = sorted(os.listdir(dellog))
@@ -131,13 +134,13 @@ def process_dellog(dn):
 	return (timestamp, dellog_id, modifier, action)
 
 
-def prefix_record(record, identifier):
+def prefix_record(record: str, identifier: int) -> str:
 	if not configRegistry.is_true('ldap/logging/id-prefix', False):
 		return record
 	return '\n'.join('ID %s: %s' % (identifier, line) for line in record.splitlines()) + '\n'
 
 
-def handler(dn: str, new_copy: dict, old_copy: dict) -> None:
+def handler(dn: str, new_copy: Dict[str, List[bytes]], old_copy: Dict[str, List[bytes]]) -> None:
 	if not configRegistry.is_true('ldap/logging'):
 		return
 

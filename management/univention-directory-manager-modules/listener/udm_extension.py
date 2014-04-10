@@ -34,6 +34,7 @@ from __future__ import absolute_import
 import bz2
 import os
 import subprocess
+from typing import Dict, List, Optional
 
 import apt
 
@@ -72,7 +73,7 @@ class moduleRemovalFailed(Exception):
 		Exception.__init__(self, message)
 
 
-def handler(dn, new, old):
+def handler(dn: str, new: Dict[str, List[bytes]], old: Dict[str, List[bytes]]) -> None:
 	"""Handle UDM extension modules"""
 
 	if new:
@@ -222,7 +223,7 @@ def handler(dn, new, old):
 		listener.unsetuid()
 
 
-def remove_object(udm_module_name, object_dn):
+def remove_object(udm_module_name: str, object_dn: str) -> None:
 	listener.setuid(0)
 	try:
 		try:
@@ -244,7 +245,7 @@ def remove_object(udm_module_name, object_dn):
 		listener.unsetuid()
 
 
-def install_python_file(objectclass, target_subdir, target_filename, data):
+def install_python_file(objectclass: str, target_subdir: str, target_filename: str, data: bytes) -> bool:
 	"""Install a python module file"""
 
 	# input validation
@@ -279,13 +280,13 @@ def install_python_file(objectclass, target_subdir, target_filename, data):
 	return not failed
 
 
-def remove_python_file(objectclass, target_subdir, target_filename):
+def remove_python_file(objectclass: str, target_subdir: str, target_filename: str) -> Optional[bool]:
 	"""Remove python module files"""
 	remove_python_files(PYTHON_DIR, target_subdir, target_filename)
 	return remove_python_files(PYTHON3_DIR, target_subdir, target_filename)
 
 
-def remove_python_files(python_basedir, target_subdir, target_filename):
+def remove_python_files(python_basedir: str, target_subdir: str, target_filename: str) -> Optional[bool]:
 	# input validation
 	relative_filename = os.path.join(target_subdir, target_filename)
 	if not relative_filename:
@@ -352,7 +353,7 @@ def remove_python_files(python_basedir, target_subdir, target_filename):
 		return False
 
 
-def create_python_moduledir(python_basedir, target_subdir, module_directory):
+def create_python_moduledir(python_basedir: str, target_subdir: str, module_directory: str) -> List[str]:
 	"""create directory and __init__.py (file or link). Recurse for all parent directories in path module_directory"""
 	# input validation
 	if not module_directory:
@@ -387,7 +388,7 @@ def create_python_moduledir(python_basedir, target_subdir, module_directory):
 	return init_file_list
 
 
-def cleanup_python_moduledir(python_basedir, target_subdir, module_directory):
+def cleanup_python_moduledir(python_basedir: str, target_subdir: str, module_directory: str) -> None:
 	"""remove __init__.py and directory from if no other file is in the directory. Recurse for all parent directories in path module_directory"""
 	# input validation
 	if not module_directory:
@@ -444,7 +445,7 @@ def cleanup_python_moduledir(python_basedir, target_subdir, module_directory):
 		cleanup_python_moduledir(python_basedir, target_subdir, parent_dir)
 
 
-def install_messagecatalog(dn, attrs, objectclass):
+def install_messagecatalog(dn: str, attrs: Dict[str, List[bytes]], objectclass: str) -> None:
 	translationfile_ldap_attribute = "univentionMessageCatalog"
 	translationfile_ldap_attribute_and_tag_prefix = "%s;entry-lang-" % (translationfile_ldap_attribute,)
 	if objectclass == 'univentionUDMModule':
@@ -473,7 +474,7 @@ def install_messagecatalog(dn, attrs, objectclass):
 			f.write(mo_data_binary)
 
 
-def remove_messagecatalog(dn, attrs, objectclass):
+def remove_messagecatalog(dn: str, attrs: Dict[str, List[bytes]], objectclass: str) -> None:
 	translationfile_ldap_attribute = "univentionMessageCatalog"
 	translationfile_ldap_attribute_and_tag_prefix = "%s;entry-lang-" % (translationfile_ldap_attribute,)
 	if objectclass == 'univentionUDMModule':
@@ -505,7 +506,7 @@ def remove_messagecatalog(dn, attrs, objectclass):
 			ud.debug(ud.LISTENER, ud.INFO, '%s: Warning: %s does not exist.' % (name, filename))
 
 
-def install_umcmessagecatalogs(attrs_new, attrs_old):
+def install_umcmessagecatalogs(attrs_new: Dict[str, List[bytes]], attrs_old: Dict[str, List[bytes]]) -> None:
 	remove_umcmessagecatalogs(attrs_old)
 	umcmessagecatalogs = _umcmessagecatalog_ldap_attributes(attrs_new)
 	if not umcmessagecatalogs:
@@ -518,7 +519,7 @@ def install_umcmessagecatalogs(attrs_new, attrs_old):
 			f.write(mo_data_binary)
 
 
-def remove_umcmessagecatalogs(attrs):
+def remove_umcmessagecatalogs(attrs: Dict[str, List[bytes]]) -> None:
 	umcmessagecatalogs = _umcmessagecatalog_ldap_attributes(attrs)
 	if not umcmessagecatalogs:
 		return
@@ -532,7 +533,7 @@ def remove_umcmessagecatalogs(attrs):
 			os.unlink(filename)
 
 
-def _umcmessagecatalog_ldap_attributes(attrs):
+def _umcmessagecatalog_ldap_attributes(attrs: Dict[str, List[bytes]]) -> Dict[str, bytes]:
 	translationfile_ldap_attribute_and_tag_prefix = "univentionUMCMessageCatalog;entry-"
 	umcmessagecatalogs = {}
 	for ldap_attribute in attrs:
@@ -542,13 +543,13 @@ def _umcmessagecatalog_ldap_attributes(attrs):
 	return umcmessagecatalogs
 
 
-def _parse_filename_from_ldap_attr(ldap_filename):
+def _parse_filename_from_ldap_attr(ldap_filename: str) -> str:
 	language_tag, module_id = ldap_filename.split('-', 1)
 	basedir = os.path.join(LOCALE_BASEDIR_UMC, language_tag.replace('/', '-'))
 	return safe_path_join(basedir, '%s.mo' % (module_id,))
 
 
-def install_umcregistration(dn, attrs):
+def install_umcregistration(dn: str, attrs: Dict[str, List[bytes]]) -> None:
 	compressed_data = attrs.get('univentionUMCRegistrationData', [None])[0]
 	if not compressed_data:
 		return
@@ -568,7 +569,7 @@ def install_umcregistration(dn, attrs):
 		f.write(object_data)
 
 
-def remove_umcregistration(dn, attrs):
+def remove_umcregistration(dn: str, attrs: Dict[str, List[bytes]]) -> None:
 	if not attrs.get('univentionUMCRegistrationData'):
 		return
 
@@ -581,7 +582,7 @@ def remove_umcregistration(dn, attrs):
 		ud.debug(ud.LISTENER, ud.INFO, '%s: Warning: %s does not exist.' % (name, filename))
 
 
-def install_umcicons(dn, attrs):
+def install_umcicons(dn: str, attrs: Dict[str, List[bytes]]) -> None:
 	module_name = attrs.get('cn')[0].decode('UTF-8')
 	for object_data in attrs.get('univentionUMCIcon', []):
 		(mime_type, compression_mime_type, subdir) = imagecategory_of_buffer(object_data)
@@ -597,7 +598,7 @@ def install_umcicons(dn, attrs):
 			f.write(object_data)
 
 
-def remove_umcicons(dn, attrs):
+def remove_umcicons(dn: str, attrs: Dict[str, List[bytes]]) -> None:
 	module_name = attrs.get('cn')[0].decode('UTF-8')
 	for object_data in attrs.get('univentionUMCIcon', []):
 		(mime_type, compression_mime_type, subdir) = imagecategory_of_buffer(object_data)

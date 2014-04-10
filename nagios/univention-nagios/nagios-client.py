@@ -35,6 +35,7 @@ from __future__ import absolute_import, annotations
 import os
 import re
 import stat
+from typing import Dict, List
 
 import listener
 import univention.debug
@@ -75,7 +76,7 @@ def readPluginConfig() -> None:
 			listener.unsetuid()
 
 
-def replaceArguments(cmdline: str, args: list) -> str:
+def replaceArguments(cmdline: bytes, args: List[bytes]) -> bytes:
 	for i in range(9):
 		if i < len(args):
 			cmdline = re.sub(r'\$ARG%d\$'.encode('ASCII') % (i + 1), args[i], cmdline)
@@ -84,7 +85,7 @@ def replaceArguments(cmdline: str, args: list) -> str:
 	return cmdline
 
 
-def writeConfig(fqdn: str, new: dict) -> None:
+def writeConfig(fqdn: bytes, new: Dict[str, List[bytes]]) -> None:
 	readPluginConfig()
 
 	name = new['cn'][0].decode('UTF-8')
@@ -133,7 +134,7 @@ def removeConfig(name: str) -> None:
 		listener.unsetuid()
 
 
-def handler(dn: str, new: dict, old: dict) -> None:
+def handler(dn: str, new: Dict[str, List[bytes]], old: Dict[str, List[bytes]]) -> None:
 	# univention.debug.debug(univention.debug.LISTENER, univention.debug.INFO, 'NAGIOS-CLIENT: IN dn=%r' % (dn,))
 	# univention.debug.debug(univention.debug.LISTENER, univention.debug.INFO, 'NAGIOS-CLIENT: IN old=%r' % (old,))
 	# univention.debug.debug(univention.debug.LISTENER, univention.debug.INFO, 'NAGIOS-CLIENT: IN new=%r' % (new,))
