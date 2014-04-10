@@ -51,7 +51,6 @@ except ImportError:
 name = 'ad-connector'
 description = 'AD Connector replication'
 filter = '(objectClass=*)'
-attributes = []  # type: List[str]
 
 
 # use the modrdn listener extension

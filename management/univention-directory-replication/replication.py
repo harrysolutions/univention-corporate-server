@@ -61,7 +61,6 @@ import univention.debug as ud
 name = 'replication'
 description = 'LDAP Replica Node replication'
 filter = '(objectClass=*)'  # default filter - may be overwritten later
-attributes = []
 modrdn = '1'
 priority = 0.0
 

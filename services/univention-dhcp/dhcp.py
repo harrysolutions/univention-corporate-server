@@ -52,7 +52,6 @@ filter = '''(|
 	(cn=dhcp)
 	(objectClass=domain)
 	)'''.replace('\n', '').replace('\t', '')
-attributes = []
 
 
 def handler(dn, new, old):
