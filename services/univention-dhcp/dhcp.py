@@ -30,7 +30,7 @@
 # /usr/share/common-licenses/AGPL-3; if not, see
 # <https://www.gnu.org/licenses/>.
 
-from __future__ import absolute_import
+from __future__ import absolute_import, annotations
 
 import univention.debug as ud
 from listener import configRegistry as ucr, run
@@ -54,13 +54,11 @@ filter = '''(|
 	)'''.replace('\n', '').replace('\t', '')
 
 
-def handler(dn, new, old):
-	# type: (str, dict, dict) -> None
+def handler(dn: str, new: dict, old: dict) -> None:
 	pass
 
 
-def postrun():
-	# type: () -> None
+def postrun() -> None:
 	if ucr.is_true("dhcpd/autostart", False):
 		if ucr.is_true('dhcpd/restart/listener', False):
 			ud.debug(ud.LISTENER, ud.INFO, 'DHCP: Restarting server')

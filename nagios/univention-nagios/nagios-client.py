@@ -30,7 +30,7 @@
 # /usr/share/common-licenses/AGPL-3; if not, see
 # <https://www.gnu.org/licenses/>.
 
-from __future__ import absolute_import
+from __future__ import absolute_import, annotations
 
 import os
 import re
@@ -51,8 +51,7 @@ __pluginconfdirstat = 0
 __pluginconfig = {}
 
 
-def readPluginConfig():
-	# type: () -> None
+def readPluginConfig() -> None:
 	global __pluginconfdirstat
 
 	if __pluginconfdirstat != os.stat(__pluginconfdir)[8]:
@@ -76,8 +75,7 @@ def readPluginConfig():
 			listener.unsetuid()
 
 
-def replaceArguments(cmdline, args):
-	# type: (str, list) -> str
+def replaceArguments(cmdline: str, args: list) -> str:
 	for i in range(9):
 		if i < len(args):
 			cmdline = re.sub(r'\$ARG%d\$'.encode('ASCII') % (i + 1), args[i], cmdline)
@@ -86,8 +84,7 @@ def replaceArguments(cmdline, args):
 	return cmdline
 
 
-def writeConfig(fqdn, new):
-	# type: (str, dict) -> None
+def writeConfig(fqdn: str, new: dict) -> None:
 	readPluginConfig()
 
 	name = new['cn'][0].decode('UTF-8')
@@ -126,8 +123,7 @@ def writeConfig(fqdn, new):
 		listener.unsetuid()
 
 
-def removeConfig(name):
-	# type: (str) -> None
+def removeConfig(name: str) -> None:
 	filename = os.path.join(__confdir, "%s.cfg" % name)
 	listener.setuid(0)
 	try:
@@ -137,8 +133,7 @@ def removeConfig(name):
 		listener.unsetuid()
 
 
-def handler(dn, new, old):
-	# type: (str, dict, dict) -> None
+def handler(dn: str, new: dict, old: dict) -> None:
 	# univention.debug.debug(univention.debug.LISTENER, univention.debug.INFO, 'NAGIOS-CLIENT: IN dn=%r' % (dn,))
 	# univention.debug.debug(univention.debug.LISTENER, univention.debug.INFO, 'NAGIOS-CLIENT: IN old=%r' % (old,))
 	# univention.debug.debug(univention.debug.LISTENER, univention.debug.INFO, 'NAGIOS-CLIENT: IN new=%r' % (new,))
@@ -179,8 +174,7 @@ def handler(dn, new, old):
 			writeConfig(fqdn, new)
 
 
-def initialize():
-	# type: () -> None
+def initialize() -> None:
 	dirname = '/etc/nagios/nrpe.univention.d'
 
 	if not os.path.exists(dirname):
@@ -191,8 +185,7 @@ def initialize():
 			listener.unsetuid()
 
 
-def deleteTree(dirname):
-	# type: (str) -> None
+def deleteTree(dirname: str) -> None:
 	if os.path.exists(dirname):
 		for f in os.listdir(dirname):
 			fn = os.path.join(dirname, f)
@@ -204,8 +197,7 @@ def deleteTree(dirname):
 		os.rmdir(dirname)
 
 
-def clean():
-	# type: () -> None
+def clean() -> None:
 	dirname = '/etc/nagios/nrpe.univention.d'
 	if os.path.exists(dirname):
 		listener.setuid(0)
@@ -215,8 +207,7 @@ def clean():
 			listener.unsetuid()
 
 
-def postrun():
-	# type: () -> None
+def postrun() -> None:
 	global __initscript
 	initscript = __initscript
 	if listener.configRegistry.is_true("nagios/client/autostart"):

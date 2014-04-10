@@ -38,7 +38,7 @@
 # 2. Primary is degraded to Replica
 #    use existing database
 
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import, annotations, print_function
 
 import base64
 import os
@@ -48,6 +48,7 @@ import subprocess
 import sys
 import time
 from errno import ENOENT
+from typing import Optional
 
 import ldap
 import ldap.schema
@@ -722,8 +723,7 @@ def _backup_dn_recursive(lo, dn):
 			ldif_writer.unparse(dn, entry)
 
 
-def _remove_file(pathname):
-	# type: (str) -> None
+def _remove_file(pathname: str) -> None:
 	ud.debug(ud.LISTENER, ud.ALL, 'replication: removing %s' % (pathname,))
 	try:
 		os.remove(pathname)
@@ -747,8 +747,7 @@ def _modify_object_from_old_and_new(lo, dn, old, new):
 		lo.modify_s(dn, ml)
 
 
-def _read_dn_from_file(filename):
-	# type: (str) -> Optional[str]
+def _read_dn_from_file(filename: str) -> Optional[str]:
 	old_dn = None
 
 	try:
@@ -760,8 +759,7 @@ def _read_dn_from_file(filename):
 	return old_dn
 
 
-def check_file_system_space():
-	# type: () -> None
+def check_file_system_space() -> None:
 	if not listener.configRegistry.is_true('ldap/replication/filesystem/check'):
 		return
 
@@ -794,8 +792,7 @@ def check_file_system_space():
 	listener.run('/usr/bin/systemctl', ['systemctl', 'stop', 'univention-directory-listener'], uid=0, wait=True)
 
 
-def handler(dn, new, listener_old, operation):
-	# type: (str, dict, dict, str) -> int
+def handler(dn: str, new: dict, listener_old: dict, operation: str) -> int:
 	global reconnect
 	if not slave:
 		return 1
@@ -879,7 +876,7 @@ def handler(dn, new, listener_old, operation):
 						_backup_dn_recursive(lo, dn)
 						_delete_dn_recursive(lo, dn)
 
-					if getOldValues(lo, old_dn):
+					if getOldValues(lo, old_dn):  # FIXME: mypy old_dn ? None
 						# the normal rename is possible
 						new_dn = ldap.dn.str2dn(dn)
 						new_parent = ldap.dn.dn2str(new_dn[1:])
@@ -973,8 +970,7 @@ def handler(dn, new, listener_old, operation):
 			handler(dn, new, listener_old, operation)
 
 
-def log_ldap(severity, msg, ex, dn=None):
-	# type: (int, str, ldap.LDAPError, str) -> None
+def log_ldap(severity: int, msg: str, ex: ldap.LDAPError, dn: str = None) -> None:
 	"""
 	Log LDAP exception with details.
 
@@ -1025,8 +1021,7 @@ def log_ldap(severity, msg, ex, dn=None):
 		pass
 
 
-def clean():
-	# type: () -> None
+def clean() -> None:
 	global slave
 	if not slave:
 		return 1
@@ -1053,8 +1048,7 @@ def clean():
 	listener.run('/usr/sbin/univention-config-registry', ['univention-config-registry', 'commit', '/var/lib/univention-ldap/ldap/DB_CONFIG'], uid=0)
 
 
-def initialize():
-	# type: () -> None
+def initialize() -> None:
 	ud.debug(ud.LISTENER, ud.INFO, 'replication: initialize')
 	if not slave:
 		ud.debug(ud.LISTENER, ud.INFO, 'replication: not a Replica Node')
@@ -1065,8 +1059,7 @@ def initialize():
 	init_slapd('start')
 
 
-def randpw(length=64):
-	# type: (int) -> str
+def randpw(length: int = 64) -> str:
 	"""Create random password.
 	>>> randpw().isalnum()
 	True
@@ -1082,8 +1075,7 @@ def randpw(length=64):
 	return password
 
 
-def new_password():
-	# type: () -> str
+def new_password() -> str:
 	pw = randpw()
 
 	listener.setuid(0)
@@ -1097,8 +1089,7 @@ def new_password():
 	return pw
 
 
-def get_password():
-	# type: () -> str
+def get_password() -> str:
 	listener.setuid(0)
 	try:
 		with open(ROOTPW_FILE, 'r') as fd:
@@ -1115,7 +1106,6 @@ def get_password():
 get_password.RE_ROOTDN = re.compile(r'^rootpw[ \t]+"((?:[^"\\]|\\["\\])+)"')
 
 
-def init_slapd(arg):
-	# type: (str) -> None
+def init_slapd(arg: str) -> None:
 	listener.run('/etc/init.d/slapd', ['slapd', arg], uid=0)
 	time.sleep(1)

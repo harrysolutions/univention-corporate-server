@@ -30,7 +30,7 @@
 # /usr/share/common-licenses/AGPL-3; if not, see
 # <https://www.gnu.org/licenses/>.
 
-from __future__ import absolute_import
+from __future__ import absolute_import, annotations
 
 import base64
 import grp
@@ -65,8 +65,7 @@ digest = configRegistry.get('ldap/logging/hash', 'md5')
 SAFE_STRING_RE = re.compile(r'^(?:\000|\n|\r| |:|<)|[\000\n\r\200-\377]+|[ ]+$'.encode('ASCII'))
 
 
-def ldapEntry2string(entry):
-	# type: (dict) -> str
+def ldapEntry2string(entry: dict) -> str:
 	# TODO: we don't know the encoding of the attribute, therefore every non-ASCII value must be base64
 	return ''.join(
 		'%s:: %s\n' % (key, base64.standard_b64encode(value).decode('ASCII'))
@@ -77,8 +76,7 @@ def ldapEntry2string(entry):
 	)
 
 
-def ldapTime2string(timestamp):
-	# type: (str) -> str
+def ldapTime2string(timestamp: str) -> str:
 	try:
 		timestruct = time.strptime(timestamp, "%Y%m%d%H%M%SZ")
 	except ValueError:
@@ -139,8 +137,7 @@ def prefix_record(record, identifier):
 	return '\n'.join('ID %s: %s' % (identifier, line) for line in record.splitlines()) + '\n'
 
 
-def handler(dn, new_copy, old_copy):
-	# type: (str, dict, dict) -> None
+def handler(dn: str, new_copy: dict, old_copy: dict) -> None:
 	if not configRegistry.is_true('ldap/logging'):
 		return
 
@@ -221,8 +218,7 @@ def handler(dn, new_copy, old_copy):
 		syslog.closelog()
 
 
-def createFile(filename):
-	# type: (str) -> int
+def createFile(filename: str) -> int:
 	global gidNumber
 
 	if gidNumber == 0:
@@ -244,8 +240,7 @@ def createFile(filename):
 	return 0
 
 
-def initialize():
-	# type: () -> None
+def initialize() -> None:
 	timestamp = time.strftime(timestampfmt, time.gmtime())
 	univention.debug.debug(univention.debug.LISTENER, univention.debug.INFO, 'init %s' % name)
 
