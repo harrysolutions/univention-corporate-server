@@ -29,9 +29,12 @@
 # <https://www.gnu.org/licenses/>.
 #
 
+from __future__ import annotations
+
 import os
 from contextlib import contextmanager
 from pwd import getpwnam
+from typing import Any, Dict, Iterator, Tuple
 
 import lmdb
 
@@ -39,19 +42,19 @@ from univention.ldap_cache.cache.backend import Caches, LdapCache, Shard
 
 
 class LmdbCaches(Caches):
-	def __init__(self, *args, **kwargs):
+	def __init__(self, *args: Any, **kwargs: Any) -> None:
 		super(LmdbCaches, self).__init__(*args, **kwargs)
 		self.env = lmdb.open(self._directory, 2 ** 32 - 1, max_dbs=128)
 		self._fix_permissions(self._directory)
 
-	def _fix_permissions(self, db_directory):
+	def _fix_permissions(self, db_directory: str) -> None:
 		listener_uid = getpwnam('listener').pw_uid
 		os.chown(os.path.join(db_directory, 'data.mdb'), listener_uid, -1)
 		os.chown(os.path.join(db_directory, 'lock.mdb'), listener_uid, -1)
 		os.chmod(os.path.join(db_directory, 'data.mdb'), 0o640)
 		os.chmod(os.path.join(db_directory, 'lock.mdb'), 0o640)
 
-	def _add_sub_cache(self, name, single_value):
+	def _add_sub_cache(self, name: str, single_value: bool, reverse: bool) -> LmdbCache:
 		sub_db = self.env.open_db(name, dupsort=not single_value)
 		cache = LmdbCache(name, single_value)
 		cache.env = self.env
@@ -62,42 +65,42 @@ class LmdbCaches(Caches):
 
 class LmdbCache(LdapCache):
 	@contextmanager
-	def writing(self, writer=None):
+	def writing(self, writer: Any = None) -> Iterator[Any]:
 		if writer is not None:
 			yield writer
 		else:
 			with self.env.begin(self.sub_db, write=True) as writer:
 				yield writer
 
-	def save(self, key, values):
+	def save(self, key: str, values: Any):
 		with self.writing() as writer:
 			self.delete(key, writer)
 			for value in values:
 				writer.put(key, value)
 
-	def clear(self):
+	def clear(self) -> None:
 		with self.env.begin(write=True) as writer:
 			writer.drop(self.sub_db, delete=False)
 
-	def cleanup(self):
+	def cleanup(self) -> None:
 		pass
 
-	def delete(self, key, writer=None):
+	def delete(self, key: str, writer: Any = None) -> None:
 		with self.writing(writer) as writer:
 			writer.delete(key)
 
 	@contextmanager
-	def reading(self):
+	def reading(self) -> Iterator[Any]:
 		with self.env.begin(self.sub_db) as txn:
 			with txn.cursor() as cursor:
 				yield cursor
 
-	def __iter__(self):
+	def __iter__(self) -> Iterator[Tuple[str, Any]]:
 		with self.reading() as reader:
 			for key, value in reader:
 				yield key, value
 
-	def get(self, key):
+	def get(self, key: str) -> Any:
 		with self.reading() as reader:
 			if self.single_value:
 				return reader.get(key)
@@ -105,7 +108,7 @@ class LmdbCache(LdapCache):
 				reader.set_key(key)
 				return list(reader.iternext_dup())
 
-	def load(self):
+	def load(self) -> Dict[str, Any]:
 		ret = {}
 		with self._load_key_translations() as translations:
 			with self.reading() as reader:
@@ -117,7 +120,7 @@ class LmdbCache(LdapCache):
 		return ret
 
 	@contextmanager
-	def _load_key_translations(self):
+	def _load_key_translations(self) -> Iterator[Any]:
 		entry_uuid_db = self.env.open_db('EntryUUID', dupsort=False)
 		with self.env.begin(entry_uuid_db) as txn:
 			yield txn

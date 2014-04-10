@@ -38,7 +38,7 @@ from univention.ldap_cache.cache.shard_config import shards_from_config
 
 
 # Singleton pattern
-def get_cache():
+def get_cache() -> Caches:
 	if get_cache._cache is None:
 		debug('Creating the Caches instance')
 		caches = Caches()
