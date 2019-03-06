@@ -164,7 +164,10 @@ class ProcessorBase(Base):
 
 	@property
 	def lo(self):
-		return get_machine_connection(write=False)[0]
+		try:
+			return get_machine_connection(write=False)[0]
+		except ldap.INVALID_CREDENTIALS as exc:
+			CORE.info('Could not get machine connection: %s' % (exc,))
 
 	def __init__(self):
 		Base.__init__(self, 'univention-management-console')

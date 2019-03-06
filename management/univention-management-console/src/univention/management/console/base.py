@@ -127,7 +127,7 @@ from univention.management.console.protocol.definitions import MODULE_ERR, MODUL
 from univention.management.console.ldap import get_user_connection, reset_cache as reset_ldap_connection_cache
 from univention.management.console.config import ucr
 from univention.management.console.log import MODULE, CORE
-from univention.management.console.error import UMC_Error, NotAcceptable, PasswordRequired, LDAP_ServerDown, LDAP_ConnectionFailed, Unauthorized
+from univention.management.console.error import UMC_Error, NotAcceptable, PasswordRequired, LDAP_ServerDown, LDAP_ConnectionFailed
 
 _ = Translation('univention.management.console').translate
 
@@ -299,19 +299,16 @@ class Base(signals.Provider, Translation):
 			#  of a ReconnectLDAPObject instance after an exception by clearing the connection cache.
 			#  Bug #46089
 			reset_ldap_connection_cache()
-		if isinstance(exc, udm_errors.ldapError) and isinstance(getattr(exc, 'original_exception', None), ldap.SERVER_DOWN):
-			exc = exc.original_exception
-		if isinstance(exc, udm_errors.ldapError) and isinstance(getattr(exc, 'original_exception', None), ldap.INVALID_CREDENTIALS):
+		if isinstance(exc, udm_errors.ldapError) and isinstance(getattr(exc, 'original_exception', None), ldap.SERVER_DOWN, ldap.INVALID_CREDENTIALS):
 			exc = exc.original_exception
 		if isinstance(exc, ldap.SERVER_DOWN):
 			raise LDAP_ServerDown()
-		if isinstance(exc, ldap.CONNECT_ERROR):
+		if isinstance(exc, (ldap.CONNECT_ERROR, ldap.INVALID_CREDENTIALS)):
 			raise LDAP_ConnectionFailed(exc)
 		if isinstance(exc, ldap.INVALID_CREDENTIALS):
 			#  Ensure the connection cache is empty to prevent the use of expired saml messages
 			#  Bug #44621
 			reset_ldap_connection_cache()
-			raise Unauthorized
 
 	def __error_handling(self, request, method, etype, exc, etraceback):
 		"""
