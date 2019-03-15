@@ -556,6 +556,31 @@ class Instance(Base, ProgressMixin):
 					MODULE.process('The LDAP object for the LDAP DN %s could not be found' % ldap_dn)
 		return result
 
+	@allow_get_request
+	@sanitize(dn=DNSanitizer(required=True))
+	def jpeg_photo(self, request):
+		thread = notifier.threads.Simple('GetJpeg', notifier.Callback(self._get_jpeg_photo, request), notifier.Callback(self.thread_finished_callback, request))
+		thread.run()
+
+	def _get_jpeg_photo(self, request):
+		dn = request.options['dn']
+		module = get_module('users/user', dn)
+		if module is None:
+			self.finished(request.id, '', mimetype='image/jpeg')
+			return
+		obj = module.get(dn)
+		if obj is None:
+			self.finished(request.id, '', mimetype='image/jpeg')
+			return
+		data = obj.info.get('jpegPhoto', '').decode('base64')  # TODO: scale down to 50x50px
+		headers = {
+			# 'Last-Modified': obj.info['modifyTimestamp'] # TODO: enable for users/user
+			# 'ETag': '' : TODO generate
+			'Cache-Control': 'max-age=2592000',
+			#'Expires': '',
+		}
+		self.finished(request.id, data, mimetype='image/jpeg', headers=headers)
+
 	@sanitize(
 		objectPropertyValue=PropertySearchSanitizer(
 			add_asterisks=ADD_ASTERISKS,
