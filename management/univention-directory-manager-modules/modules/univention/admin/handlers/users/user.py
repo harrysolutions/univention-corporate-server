@@ -734,6 +734,12 @@ property_descriptions = {
 		multivalue=True,
 		copyable=True,
 	),
+	'kerberosPrinciple': univention.admin.property(
+		short_description=_('Kerberos principal'),
+		long_description=_('The kerberos principal name'),
+		syntax=univention.admin.syntax.string,
+		copyable=True,
+	),
 }
 
 default_property_descriptions = copy.deepcopy(property_descriptions)  # for later reset of descriptions
@@ -1247,6 +1253,11 @@ def unmapUTCDateTimeToLocaltime(attribute_value, encoding=()):  # type: (List[by
 	return []
 
 
+def unmapKerberosPrincipalName(old):
+	if old and old[0]:
+		return old[0].rsplit('@', 1)[0]
+
+
 mapping = univention.admin.mapping.mapping()
 mapping.register('username', 'uid', None, univention.admin.mapping.ListToString)
 mapping.register('uidNumber', 'uidNumber', None, univention.admin.mapping.ListToString)
@@ -1301,6 +1312,7 @@ mapping.register('jpegPhoto', 'jpegPhoto', univention.admin.mapping.mapBase64, u
 mapping.register('umcProperty', 'univentionUMCProperty', mapKeyAndValue, unmapKeyAndValue)
 mapping.register('lockedTime', 'sambaBadPasswordTime', mapWindowsFiletime, unmapWindowsFiletime)
 mapping.register('accountActivationDate', 'krb5ValidStart', mapDateTimeTimezoneTupleToUTCDateTimeString, unmapUTCDateTimeToLocaltime, encoding='ASCII')
+mapping.register('kerberosPrinciple', 'krb5PrincipalName', univention.admin.mapping.dontMap(), unmapKerberosPrincipalName)
 
 mapping.registerUnmapping('sambaRID', unmapSambaRid)
 mapping.registerUnmapping('passwordexpiry', unmapPasswordExpiry)
@@ -1632,7 +1644,7 @@ class object(univention.admin.handlers.simpleLdap):
 		realm = domain.getKerberosRealm()
 		if not realm:
 			raise univention.admin.uexceptions.noKerberosRealm()
-		return self['username'] + '@' + realm
+		return self.get('kerberosPrinciple', self['username']) + '@' + realm
 
 	def _check_uid_gid_uniqueness(self):
 		if not configRegistry.is_true("directory/manager/uid_gid/uniqueness", True):
@@ -1818,7 +1830,7 @@ class object(univention.admin.handlers.simpleLdap):
 		return ml
 
 	def _modlist_krb_principal(self, ml):
-		if not self.exists() or self.hasChanged('username'):
+		if not self.exists() or self.hasChanged(['username', 'kerberosPrinciple']):
 			ml.append(('krb5PrincipalName', self.oldattr.get('krb5PrincipalName', []), [self.krb5_principal().encode('utf-8')]))  # TODO: decide to let krb5_principal return bytestring?!
 		return ml
 
