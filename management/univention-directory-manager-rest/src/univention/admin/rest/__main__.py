@@ -125,7 +125,8 @@ class Server(object):
 		io_loop.add_callback_from_signal(shutdown)
 
 	def signal_handler_reload(self, signal, frame):
-		ucr.load()
+		from univention.admin.rest.module import Application
+		Application.reload()
 		log_reopen()
 
 	@classmethod
