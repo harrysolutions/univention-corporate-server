@@ -38,6 +38,7 @@ import sys
 from datetime import datetime
 from functools import partial
 import json
+import sqlalchemy.exc
 
 from pyparsing import Word, alphas, Suppress, Combine, nums, string, Regex, ParseException
 
@@ -129,6 +130,8 @@ def stdin_to_storage():
 if __name__ == "__main__":
 	try:
 		stdin_to_storage()
+	except sqlalchemy.exc.OperationalError as exc:
+		get_logger().error('Processing entry failed: %s', exc)
 	except Exception as exc:
 		get_logger().error('Processing entry failed!')
 		get_logger().exception(exc)
