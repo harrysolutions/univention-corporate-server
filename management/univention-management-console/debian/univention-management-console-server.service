@@ -8,7 +8,7 @@ Type=exec
 KillMode=control-group
 UMask=0077
 LimitNOFILE=64512
-ExecStart=/usr/sbin/univention-management-console-server
+ExecStart=python3 -m univention.management.console.protocol.server
 ExecStop=/bin/kill $MAINPID
 ExecReload=/bin/kill -SIGUSR1 $MAINPID
 User=root
@@ -16,3 +16,4 @@ Group=root
 
 [Install]
 WantedBy=multi-user.target
+Alias=univention-management-console-web-server.service
