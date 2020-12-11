@@ -205,14 +205,6 @@ class Base(signals.Provider, Translation):
 		self._password = password
 
 	@property
-	def acls(self):
-		return self.__acls
-
-	@acls.setter
-	def acls(self, acls):
-		self.__acls = acls
-
-	@property
 	def auth_type(self):
 		return self.__auth_type
 
@@ -427,11 +419,6 @@ class Base(signals.Provider, Translation):
 		if self.auth_type is not None:
 			raise PasswordRequired()
 
-	def permitted(self, command, options, flavor=None):
-		if not self.__acls:
-			return False
-		return self.__acls.is_command_allowed(command, options=options, flavor=flavor)
-
 	def finished(self, id, response, message=None, success=True, status=None, mimetype=None, headers=None, error=None, reason=None):
 		"""Should be invoked by module to finish the processing of a request. 'id' is the request command identifier"""
 
@@ -457,10 +444,8 @@ class Base(signals.Provider, Translation):
 		if not res.status:
 			if status is not None:
 				res.status = status
-			elif success:
-				res.status = SUCCESS
 			else:
-				res.status = MODULE_ERR
+				res.status = SUCCESS if success else MODULE_ERR
 
 		self.result(res)
 

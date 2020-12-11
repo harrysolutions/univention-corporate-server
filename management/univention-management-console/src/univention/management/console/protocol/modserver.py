@@ -36,21 +36,26 @@ the UMC server class
 :class:`~univention.management.console.protocol.server.Server`.
 """
 
-import errno
 import sys
+import json
+import base64
 import traceback
-import socket
+import logging
+import threading
 
 import notifier
 import six
+import tornado.log
+from tornado.web import RequestHandler, Application, HTTPError
+from tornado.httpserver import HTTPServer
+from tornado.netutil import bind_unix_socket
+import tornado.httputil
 
-from .server import Server
-from .message import Response, Message, IncompleteMessageError, ParseError
-from .definitions import MODULE_ERR_INIT_FAILED, SUCCESS, RECV_BUFFER_SIZE
+from .message import Request, Response
+from .definitions import MODULE_ERR_INIT_FAILED, SUCCESS
 
-from univention.management.console.acl import ACLs
-from univention.management.console.module import Module
 from univention.management.console.log import MODULE, PROTOCOL
+from univention.management.console.config import ucr
 
 from univention.lib.i18n import Translation
 
@@ -61,8 +66,11 @@ except ImportError:
 
 _ = Translation('univention.management.console').translate
 
+if 422 not in tornado.httputil.responses:
+	tornado.httputil.responses[422] = 'Unprocessable Entity'  # Python 2 is missing this status code
 
-class ModuleServer(Server):
+
+class ModuleServer(object):
 
 	"""Implements an UMC module server
 
@@ -72,36 +80,20 @@ class ModuleServer(Server):
 	:param bool check_acls: if False the module server does not check the permissions (**dangerous!**)
 	"""
 
-	def __init__(self, socket, module, timeout=300, check_acls=True):
+	def __init__(self, socket, module, timeout=300):
 		# type: (str, str, int, bool) -> None
-		self.__name = module
+		self.__socket = socket
 		self.__module = module
-		self.__commands = Module()
-		self.__comm = None
-		self.__client = None
-		self.__buffer = b''
-		self.__acls = None
 		self.__timeout = timeout
 		self.__time_remaining = timeout
-		self.__active_requests = 0
+		self.__active_requests = {}
 		self._timer()
-		self.__check_acls = check_acls
-		self.__queue = b''
-		self.__username = None
-		self.__user_dn = None
-		self.__password = None
 		self.__init_etype = None
 		self.__init_exc = None
 		self.__init_etraceback = None
+		self.__initialized = False
 		self.__handler = None
 		self._load_module()
-		Server.__init__(self, port=None, ssl=False, unix=socket, magic=False, load_ressources=False)
-		MODULE.process('Module socket initialized.')
-
-	def __enter__(self):
-		x = super(ModuleServer, self).__enter__()
-		self.signal_connect('session_new', self._client)
-		return x
 
 	def _load_module(self):
 		# type: () -> None
@@ -117,6 +109,7 @@ class ModuleServer(Server):
 				MODULE.process('Module instance created.')
 			except Exception as exc:
 				error = _('Failed to load module %(module)s: %(error)s\n%(traceback)s') % {'module': modname, 'error': exc, 'traceback': traceback.format_exc()}
+				# TODO: systemctl reload univention-management-console-server
 				MODULE.error(error)
 				if isinstance(exc, ImportError) and str(exc).startswith('No module named %s' % (modname,)):
 					error = '\n'.join((
@@ -133,12 +126,45 @@ class ModuleServer(Server):
 			finally:
 				exc_info = None
 		else:
-			self.__handler.signal_connect('success', notifier.Callback(self._reply, True))
+			self.__handler.signal_connect('success', self._reply)
 
-	def _reply(self, msg, final):
-		if final:
-			self.__active_requests -= 1
-		self.response(msg)
+	def _reply(self, response):
+		try:
+			self.__reply(response)
+		except Exception:
+			MODULE.error(traceback.format_exc())
+			raise
+
+	def __reply(self, response):
+		umcp_request = self.__active_requests.pop(response.id)
+		request = umcp_request.request_handler
+		if response.headers:
+			for key, val in response.headers.items():
+				request.set_header(key, val)
+		for key, item in response.cookies.items():
+			if six.PY2 and not isinstance(key, bytes):
+				key = key.encode('utf-8')  # bug in python Cookie!
+			if not isinstance(item, dict):
+				item = {'value': item}
+			request.set_cookie(key, **item)
+		if isinstance(response.body, dict):
+			response.body.pop('headers', None)
+			response.body.pop('cookies', None)
+		status = response.status or 200  # status is not set if not json
+		request.set_status(status)
+		# set reason
+		if 200 <= status < 300:
+			request.set_header('Content-Type', response.mimetype)
+		elif 300 <= status < 400:
+			request.set_header('Location', response.headers.get('Location', ''))
+		body = response.body
+		if response.mimetype == 'application/json':
+			if response.message:
+				request.set_header('X-UMC-Message', response.message)
+			if isinstance(response.body, dict):
+				response.body.pop('options', None)
+			body = json.dumps(response.body).encode('ASCII')
+		request.finish(body)
 
 	def _timer(self):
 		# type: () -> None
@@ -165,56 +191,6 @@ class ModuleServer(Server):
 		self.exit()
 		sys.exit(0)
 
-	def _client(self, client, socket):
-		self.__comm = socket
-		self.__client = client
-		notifier.socket_add(self.__comm, self._recv)
-
-	def _recv(self, sock):
-		# type: (socket.socket) -> bool
-		try:
-			data = sock.recv(RECV_BUFFER_SIZE)
-		except socket.error as exc:
-			MODULE.error('Failed connection: %s' % (errno.errorcode.get(exc.errno, exc.errno),))
-			data = None
-
-		# connection closed?
-		if not data:
-			sock.close()
-			if sock == self.__comm:
-				MODULE.info('UMC server connection closed. This module is no longer in use.')
-				# the connection to UMC server connection has been closed/died/...
-				# so from now on this module is unused. Thus it is committing suicide right now.
-				self._timed_out()
-			else:
-				MODULE.info('Connection %r closed' % (sock,))
-			# remove socket from notifier
-			return False
-
-		self.__buffer += data
-
-		msg = None
-		while self.__buffer:
-			try:
-				msg = Message()
-				self.__buffer = msg.parse(self.__buffer)
-				MODULE.info("Received request %s" % msg.id)
-				self.handle(msg)
-			except IncompleteMessageError:
-				MODULE.info('Failed to parse incomplete message')
-				return True
-			except ParseError as exc:
-				MODULE.error('Failed to parse message: %s' % (exc,))
-				if not msg.id:
-					msg.id = -1
-				status, message = exc.args
-				from ..error import UMC_Error
-				raise UMC_Error(message, status=status)
-			except Exception:
-				self.error_handling(msg, 'init', *sys.exc_info())
-
-		return True
-
 	def error_handling(self, request, method, etype, exc, etraceback):
 		if self.__handler:
 			self.__handler._Base__requests[request.id] = (request, method)
@@ -234,34 +210,22 @@ class ModuleServer(Server):
 		resp.message = str(exc)
 		resp.result = exc.result
 		resp.headers = exc.headers
-		self.response(resp)
+		self._reply(resp)
 
-	def handle(self, msg):
-		# type: (Request) -> None
-		"""Handles incoming UMCP requests. This function is called only
-		when it is a valid UMCP request.
-
-		:param Request msg: the received UMCP request
-
-		The following commands are handled directly and are not passed
-		to the custom module code:
-
-		* SET (acls|username|credentials)
-		* EXIT
-		"""
-		from ..error import UMC_Error, NotAcceptable
+	def handle(self, msg, method, username, password, user_dn, auth_type, locale):
+		from ..error import NotAcceptable
 		self.__time_remaining = self.__timeout
 		PROTOCOL.info('Received UMCP %s REQUEST %s' % (msg.command, msg.id))
-
-		resp = Response(msg)
-		resp.status = SUCCESS
+		self.__active_requests[msg.id] = msg
 
 		if msg.command == 'EXIT':
 			shutdown_timeout = 100
 			MODULE.info("EXIT: module shutdown in %dms" % shutdown_timeout)
 			# shutdown module after one second
+			resp = Response(msg)
+			resp.status = SUCCESS
 			resp.message = 'module %s will shutdown in %dms' % (msg.arguments[0], shutdown_timeout)
-			self.response(resp)
+			self._reply(resp)
 			notifier.timer_add(shutdown_timeout, self._timed_out)
 			return
 
@@ -269,111 +233,144 @@ class ModuleServer(Server):
 			notifier.timer_add(10000, self._timed_out)
 			six.reraise(self.__init_etype, self.__init_exc, self.__init_etraceback)
 
-		if msg.command == 'SET':
-			for key, value in msg.options.items():
-				if key == 'acls':
-					self.__acls = ACLs(acls=value)
-					self.__handler.acls = self.__acls
-				elif key == 'commands':
-					self.__commands.fromJSON(value['commands'])
-				elif key == 'username':
-					self.__username = value
-					self.__handler.username = self.__username
-				elif key == 'password':
-					self.__password = value
-					self.__handler.password = self.__password
-				elif key == 'auth_type':
-					self.__auth_type = value
-					self.__handler.auth_type = self.__auth_type
-				elif key == 'credentials':
-					self.__username = value['username']
-					self.__user_dn = value['user_dn']
-					self.__password = value['password']
-					self.__auth_type = value.get('auth_type')
-					self.__handler.username = self.__username
-					self.__handler.user_dn = self.__user_dn
-					self.__handler.password = self.__password
-					self.__handler.auth_type = self.__auth_type
-				elif key == 'locale' and value is not None:
-					try:
-						self.__handler.update_language([value])
-					except NotAcceptable:
-						pass  # ignore if the locale doesn't exists, it continues with locale C
-				else:
-					raise UMC_Error(status=422)
-
-			# if SET command contains 'acls', commands' and
-			# 'credentials' it is the initialization of the module
-			# process
-			if 'acls' in msg.options and 'commands' in msg.options and 'credentials' in msg.options:
-				MODULE.process('Initializing module.')
-				try:
-					self.__handler.init()
-				except Exception:
-					try:
-						exc_info = sys.exc_info()
-						self.__init_etype, self.__init_exc, self.__init_etraceback = exc_info  # FIXME: do not keep a reference to traceback
-						self.error_handling(msg, 'init', *exc_info)
-					finally:
-						exc_info = None
-					return
-
-			self.response(resp)
-			return
-
-		if msg.arguments:
-			cmd = msg.arguments[0]
-			cmd_obj = self.command_get(cmd)
-			if cmd_obj and (not self.__check_acls or self.__acls.is_command_allowed(cmd, options=msg.options, flavor=msg.flavor)):
-				self.__active_requests += 1
-				self.__handler.execute(cmd_obj.method, msg)
-				return
-			raise UMC_Error('Not initialized.', status=403)
-
-	def command_get(self, command_name):
-		# type: (str) -> Optional[Any]
-		"""Returns the command object that matches the given command name"""
-		for cmd in self.__commands.commands:
-			if cmd.name == command_name:
-				return cmd
-		return None
-
-	def command_is_known(self, command_name):
-		# type: (str) -> bool
-		"""Checks if a command with the given command name is known
-
-		:rtype: bool
-		"""
-		for cmd in self.__commands.commands:
-			if cmd.name == command_name:
-				return True
-		return False
-
-	def _do_send(self, sock):
-		if len(self.__queue) > 0:
-			length = len(self.__queue)
+		if not self.__initialized:
+			self.__handler.username = username
+			self.__handler.user_dn = user_dn
+			self.__handler.password = password
+			self.__handler.auth_type = auth_type
 			try:
-				ret = self.__comm.send(self.__queue)
-			except socket.error as exc:
-				if exc.errno == errno.EWOULDBLOCK:
-					return True
-				if exc.errno == errno.EPIPE:
-					return False
-				raise
+				self.__handler.update_language([locale])
+			except NotAcceptable:
+				pass  # ignore if the locale doesn't exists, it continues with locale C
 
-			if ret < length:
-				self.__queue = self.__queue[ret:]
-				return True
-			else:
-				self.__queue = b''
-				return False
+			MODULE.process('Initializing module.')
+			try:
+				self.__handler.init()
+			except Exception:
+				try:
+					exc_info = sys.exc_info()
+					self.__init_etype, self.__init_exc, self.__init_etraceback = exc_info  # FIXME: do not keep a reference to traceback
+					self.error_handling(msg, 'init', *exc_info)
+				finally:
+					exc_info = None
+				return
+
+		self.__handler.execute(method, msg)
+
+	def __enter__(self):
+		application = Application([
+			(r'/exit', Exit, {'server': self}),
+			(r'(.*)', Handler, {'server': self}),
+		], serve_traceback=ucr.is_true('umc/http/show_tracebacks', True))
+
+		server = HTTPServer(application)
+		server.add_socket(bind_unix_socket(self.__socket))
+		server.start()
+
+		channel = logging.StreamHandler()
+		channel.setFormatter(tornado.log.LogFormatter(fmt='%(color)s%(asctime)s  %(levelname)10s      (%(process)9d) :%(end_color)s %(message)s', datefmt='%d.%m.%y %H:%M:%S'))
+		logger = logging.getLogger()
+		logger.setLevel(logging.DEBUG)
+		logger.addHandler(channel)
+
+		self.running = True
+
+		def loop():
+			while self.running:
+				notifier.step()
+		self.nf_thread = threading.Thread(target=loop, name='notifier')
+		self.nf_thread.start()
+
+		return self
+
+	def __exit__(self, etype, exc, etraceback):
+		self.running = False
+		self.ioloop.stop()
+		self.nf_thread.join()
+
+	def loop(self):
+		self.ioloop = tornado.ioloop.IOLoop.current()
+		self.ioloop.start()
+
+
+class Handler(RequestHandler):
+
+	def set_default_headers(self):
+		self.set_header('Server', 'UMC-Module/1.0')  # TODO:
+
+	def initialize(self, server):
+		self.server = server
+
+	def prepare(self):
+		pass
+
+	@tornado.web.asynchronous
+	def get(self, path):
+		method = self.request.headers['X-UMC-Method']
+		flavor = self.request.headers.get('X-UMC-Flavor')
+		username, password = self.parse_authorization()
+		user_dn = self.request.headers.get('X-User-Dn')
+		auth_type = self.request.headers.get('X-UMC-AuthType')
+		mimetype = self.request.headers.get('Content-Type')
+		locale = self.locale.code
+		msg = Request('COMMAND', [path], mime_type=mimetype)  # TODO: UPLOAD
+		if mimetype.startswith('application/json'):
+			msg.options = json.loads(self.request.body)
+			msg.flavor = flavor
 		else:
-			return False
+			msg.body = self.request.body
+		msg.headers = dict(self.request.headers)
+		msg.http_method = self.request.method
+		if six.PY2:
+			msg.cookies = dict((x.key.decode('ISO8859-1'), x.value.decode('ISO8859-1')) for x in self.request.cookies.values())
+		else:
+			msg.cookies = dict((x.key, x.value) for x in self.request.cookies.values())
+		for name, value in list(msg.cookies.items()):
+			if name == self.suffixed_cookie_name('UMCSessionId'):
+				msg.cookies['UMCSessionId'] = value
+		msg.request_handler = self
+		MODULE.process('Received request %r' % ((method, msg.flavor, msg.options, username, user_dn, auth_type, locale),))
+		self.server.handle(msg, method, username, password, user_dn, auth_type, locale)
 
-	def response(self, msg):
-		"""Sends an UMCP response to the client"""
-		PROTOCOL.info('Sending UMCP RESPONSE %s' % msg.id)
-		self.__queue += bytes(msg)
+	def suffixed_cookie_name(self, cookie_name):
+		return cookie_name  # FIXME/TODO
 
-		if self._do_send(self.__comm):
-			notifier.socket_add(self.__comm, self._do_send, notifier.IO_WRITE)
+	def parse_authorization(self):
+		credentials = self.request.headers.get('Authorization')
+		if not credentials:
+			return
+		try:
+			scheme, credentials = credentials.split(u' ', 1)
+		except ValueError:
+			raise HTTPError(400)
+		if scheme.lower() != u'basic':
+			return
+		try:
+			username, password = base64.b64decode(credentials.encode('utf-8')).decode('latin-1').split(u':', 1)
+		except ValueError:
+			raise HTTPError(400)
+		return username, password
+
+	@tornado.web.asynchronous
+	def post(self, *args):
+		return self.get(*args)
+
+	@tornado.web.asynchronous
+	def put(self, *args):
+		return self.get(*args)
+
+	@tornado.web.asynchronous
+	def delete(self, *args):
+		return self.get(*args)
+
+	@tornado.web.asynchronous
+	def patch(self, *args):
+		return self.get(*args)
+
+	@tornado.web.asynchronous
+	def options(self, *args):
+		return self.get(*args)
+
+
+def Exit(RequestHandler):
+	pass
