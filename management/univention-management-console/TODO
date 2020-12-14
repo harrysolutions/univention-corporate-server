@@ -1,0 +1,10 @@
+[ ] sanitizer
+[ ] inherit from base
+[ ] module server with notifier.tornado
+[ ] META_JSON_PATH
+[ ] set/
+[ ] NewSession
+[ ] tornado logging into file? or stdout?
+[ ] test multiprocessing
+[ ] backport shared memory https://github.com/PKizzle/shared_memory_backport https://www.reddit.com/r/Python/comments/awfzxg/cheap_backport_of_multiprocessingshared_memory/ https://docs.python.org/3.8/library/multiprocessing.shared_memory.html
+[ ] self._
