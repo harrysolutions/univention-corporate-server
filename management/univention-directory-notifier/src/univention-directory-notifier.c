@@ -66,6 +66,7 @@ void usage(void)
 	fprintf(stderr, "Usage: univention-directory-notifier [options]\n");
 	fprintf(stderr, "Options:\n");
 	fprintf(stderr, "   -F   run in foreground (intended for process supervision)\n");
+	fprintf(stderr, "   -l   path to logfile (or \"stderr\")\n");
 	fprintf(stderr, "   -o          DEPRECATED\n");
 	fprintf(stderr, "   -r          DEPRECATED\n");
 	fprintf(stderr, "   -s          DEPRECATED\n");
@@ -154,6 +155,7 @@ int main(int argc, char* argv[])
 
 	int foreground = 0;
 	int debug = 0;
+	char *notifier_log_file = "/var/log/univention/notifier.log";
 
 
 	SCHEMA_ID=0;
@@ -162,7 +164,7 @@ int main(int argc, char* argv[])
 		int c;
 		char *end;
 
-		c = getopt(argc, argv, "Fosrd:S:C:L:T:v:");
+		c = getopt(argc, argv, "Fosrd:l:S:C:L:T:v:");
 		if (c < 0)
 			break;
 
@@ -188,6 +190,9 @@ int main(int argc, char* argv[])
 			case 'T':
 				notifier_lock_time=atoll(optarg);
 				break;
+			case 'l':
+				notifier_log_file = optarg;
+				break;
 			case 'v':
 				network_procotol_version = strtoll(optarg, &end, 10);
 				if (!*optarg || *end || network_procotol_version < PROTOCOL_1 || network_procotol_version >= PROTOCOL_LAST)
@@ -203,7 +208,7 @@ int main(int argc, char* argv[])
 		daemon(1,1);
 	}
 
-	univention_debug_init("/var/log/univention/notifier.log",1,1);
+	univention_debug_init(notifier_log_file, 1, 1);
 	univention_debug_set_level(UV_DEBUG_TRANSFILE, debug);
 
 	if ( creating_pidfile("/var/run/udsnotifier.pid") != 0 )
