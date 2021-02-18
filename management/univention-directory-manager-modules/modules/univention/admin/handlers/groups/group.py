@@ -133,7 +133,8 @@ property_descriptions = {
 	'description': univention.admin.property(
 		short_description=_('Description'),
 		long_description='',
-		syntax=univention.admin.syntax.string,
+		syntax=univention.admin.syntax.TextArea,
+		size='Two',
 		include_in_default_search=True,
 		options=['posix', 'samba'],
 		readonly_when_synced=True,
