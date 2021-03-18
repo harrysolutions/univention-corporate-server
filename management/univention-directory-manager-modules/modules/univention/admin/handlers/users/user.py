@@ -743,10 +743,10 @@ layout = [
 	Tab(_('General'), _('Basic settings'), layout=[
 		Group(_('User account'), layout=[
 			['title', 'firstname', 'lastname'],
-			['username', 'description'],
+			['username', 'mailPrimaryAddress'],
+			'description',
 			'password',
 			['overridePWHistory', 'overridePWLength'],
-			'mailPrimaryAddress',
 		]),
 		Group(_('Personal information'), layout=[
 			'displayName',

@@ -212,7 +212,7 @@ property_descriptions = {
 layout = [
 	Tab(_('General'), _('Basic settings'), layout=[
 		Group(_('Group account'), layout=[
-			['name', 'description'],
+			'name', 'description',
 		]),
 		Group(_('Members of this group'), layout=[
 			'users',
