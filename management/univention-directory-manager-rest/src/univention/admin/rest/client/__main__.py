@@ -52,6 +52,36 @@ ucr = univention.config_registry.ConfigRegistry()
 ucr.load()
 
 
+class PatchDocument(object):
+
+	def __init__(self):
+		self.patch = []
+
+	def add(self, path_segments, value):
+		self.patch.append({
+			'op': 'add',
+			'path': self.expand_path(path_segments),
+			'value': value
+		})
+
+	def replace(self, path_segments, value):
+		self.patch.append({
+			'op': 'replace',
+			'path': self.expand_path(path_segments),
+			'value': value
+		})
+
+	def remove(self, path_segments, value):
+		self.patch.append({
+			'op': 'remove',
+			'path': self.expand_path(path_segments),
+			'value': value
+		})
+
+	def expand_path(self, path_segments):
+		return '/'.join(path.replace('~', '~0').replace('/', '~1') for path in [''] + path_segments)
+
+
 class CLIClient(object):
 
 	def init(self, parser, args):
@@ -99,8 +129,14 @@ class CLIClient(object):
 				return
 			else:
 				raise
-		self.set_properties(obj, args)
-		self.save_object(obj)
+		# self.set_properties(obj, args)
+		patch = self.patch_properties(obj, args)
+		try:
+			obj.json_patch(patch.patch)
+		except UnprocessableEntity as exc:
+			self.print_error(str(exc))
+			raise SystemExit(2)
+		#self.save_object(obj)
 		self.print_line('Object modified', obj.dn)
 
 	def remove_object(self, args):
@@ -132,6 +168,41 @@ class CLIClient(object):
 		except UnprocessableEntity as exc:
 			self.print_error(str(exc))
 			raise SystemExit(2)
+
+	def patch_properties(self, obj, args):
+		patch = PatchDocument()
+		patch.replace(['superordinate'], getattr(args, 'superordinate', None))
+		if args.option:
+			patch.replace(['options'], [])
+			for option in args.option:
+				patch.add(['options'], option)
+		for option in args.append_option:
+			patch.add(['options'], option)
+		for option in args.remove_option:
+			patch.remove(['options'], option)
+
+		for key_val in args.set:
+			key, value = self.parse_input(key_val)
+			patch.replace(['properties', key], value)
+
+		for key_val in args.append:
+			key, value = self.parse_input(key_val)
+			patch.add(['properties', key], value)
+
+		for key_val in getattr(args, 'remove', []):
+			if '=' not in key_val:
+				patch.remove(['properties'], key_val)
+			else:
+				key, value = self.parse_input(key_val)
+				patch.remove(['properties', key], value)
+
+		for policy_dn in args.policy_reference:
+			patch.add(['policies'], policy_dn)
+		for policy_dn in getattr(args, 'policy_dereference', []):
+			patch.remove(['policies'], policy_dn)
+
+		print(patch.patch)
+		return patch
 
 	def set_properties(self, obj, args):
 		obj.superordinate = getattr(args, 'superordinate', None)

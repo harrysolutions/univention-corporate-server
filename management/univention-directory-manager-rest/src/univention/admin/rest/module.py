@@ -113,6 +113,18 @@ if 422 not in tornado.httputil.responses:
 	tornado.httputil.responses[422] = 'Unprocessable Entity'  # Python 2 is missing this status code
 
 
+def conditioned(func, condition):
+	def _decorator(method):
+		def _decorated(self, *args, **kwargs):
+			_func = func
+			breakpoint()
+			if condition(self):
+				_func = method(_func)
+			return _func(self, *args, **kwargs)
+		return method
+	return _decorator
+
+
 def add_sanitizers(type_, sanitizers):
 	def _decorator(method):
 		setattr(method, 'sanitizers', getattr(method, 'sanitizers', {}))
@@ -168,6 +180,7 @@ class DictSanitizer(DictSanitizer):
 
 	def _sanitize(self, value, name, further_arguments):
 		if not isinstance(value, dict):
+			breakpoint()
 			self.raise_formatted_validation_error(_('Not a "dict"'), name, type(value).__name__)
 
 		if not self.allow_other_keys and any(key not in self.sanitizers for key in value):
@@ -392,7 +405,8 @@ class ResourceBase(object):
 		finally:
 			self.request.content_negotiation_lang = self.check_acceptable()
 			self.decode_request_arguments()
-			self.sanitize_arguments(RequestSanitizer(self), self)
+			if not self.request.headers.get('Content-Type', '').startswith('application/json-patch+json'):
+				self.sanitize_arguments(RequestSanitizer(self), self)
 
 	def parse_authorization(self, authorization):
 		if authorization in self.authenticated_connections:
@@ -484,7 +498,7 @@ class ResourceBase(object):
 				raise HTTPError(400, 'Safe HTTP method should not contain request body/Content-Type header.')
 			return
 
-		if content_type.startswith('application/json'):
+		if content_type.startswith('application/json') or content_type.startswith('application/json-patch+json'):
 			try:
 				self.request.body_arguments = json.loads(self.request.body)
 			except ValueError as exc:
@@ -2869,13 +2883,13 @@ class Object(FormBase, Resource):
 			self.set_status(204)
 			raise Finish()
 
-	@sanitize_body_arguments(
+	@conditioned(sanitize_body_arguments(
 		position=DNSanitizer(required=False, default=''),
 		superordinate=DNSanitizer(required=False, allow_none=True),
 		options=DictSanitizer({}, default_sanitizer=BooleanSanitizer(), required=False),
 		policies=DictSanitizer({}, default_sanitizer=ListSanitizer(DNSanitizer()), required=False),
 		properties=DictSanitizer({}),
-	)
+	), condition=lambda self: not self.request.headers['Content-Type'].startswith('application/json-patch+json'))
 	@tornado.gen.coroutine
 	def patch(self, object_type, dn):
 		"""Modify partial properties of the {} object {}."""
@@ -2892,14 +2906,15 @@ class Object(FormBase, Resource):
 		self.set_entity_tags(obj)
 
 		entry = Object.get_representation(module, obj, ['*'], self.ldap_connection, False)
-		if self.request.body_arguments['options'] is None:
-			self.request.body_arguments['options'] = entry['options']
-		if self.request.body_arguments['policies'] is None:
-			self.request.body_arguments['policies'] = entry['policies']
-		if self.request.body_arguments['properties'] is None:
-			self.request.body_arguments['properties'] = {}
-		if self.request.body_arguments['position'] is None:
-			self.request.body_arguments['position'] = entry['position']
+		if not self.request.headers['Content-Type'].startswith('application/json-patch+json'):
+			if self.request.body_arguments['options'] is None:
+				self.request.body_arguments['options'] = entry['options']
+			if self.request.body_arguments['policies'] is None:
+				self.request.body_arguments['policies'] = entry['policies']
+			if self.request.body_arguments['properties'] is None:
+				self.request.body_arguments['properties'] = {}
+			if self.request.body_arguments['position'] is None:
+				self.request.body_arguments['position'] = entry['position']
 		obj = yield self.modify(module, obj)
 		self.add_caching(public=False, must_revalidate=True, no_cache=True, no_store=True)
 		self.set_header('Location', self.urljoin(quote_dn(obj.dn)))
@@ -2938,7 +2953,10 @@ class Object(FormBase, Resource):
 	@tornado.gen.coroutine
 	def modify(self, module, obj):
 		assert obj._open
-		self.set_properties(module, obj)
+		if not self.request.headers['Content-Type'].startswith('application/json-patch+json'):
+			self.set_properties(module, obj)
+		else:
+			self.set_patch_values(module, obj)
 		yield self.pool.submit(self.handle_udm_errors, obj.modify)
 		raise tornado.gen.Return(obj)
 
@@ -3001,6 +3019,143 @@ class Object(FormBase, Resource):
 		if self.request.body_arguments['policies']:
 			obj.policies = functools.reduce(lambda x, y: x + y, self.request.body_arguments['policies'].values())
 		self.sanitize_arguments(PropertiesSanitizer(), self, module=module, obj=obj)
+
+	def patch_document(self, patch):
+		if not isinstance(patch, list):
+			raise TypeError()
+		for operation in patch:
+			try:
+				op = operation['op']
+				path = operation['path']
+			except KeyError:
+				raise TypeError()
+			assert path.startswith('/')
+			path = [x.replace('~1', '/').replace('~0', '~') for x in path.split('/')[1:]]
+			if not path:
+				raise TypeError()
+			value = operation.get('value')
+			assert op in ('add', 'remove', 'replace', 'copy', 'move', 'test')
+			if op in ('copy', 'move', 'test'):
+				continue  # ignore
+			yield op, path, value
+
+	def set_patch_values(self, module, obj):
+		for op, path, value in self.patch_document(self.request.body_arguments):
+			if path[0] not in ('superordinate', 'options', 'properties'):
+				continue
+			if path == ['superordinate']:
+				if op in ('add', 'replace') or (op == 'remove' and not value):
+					obj.superordinate = value
+				elif op in ('remove',):
+					if obj.superordinate == value:  # TODO: compare_dn
+						obj.superordinate = None
+			elif path == ['options']:
+				if op == 'replace':
+					obj.options = []
+				if op in ('add', 'replace'):
+					if value:
+						obj.options.append(value)
+				if op == 'remove':
+					if value and value in obj.options:
+						obj.options.remove(value)
+					elif not value:
+						obj.options = []
+			elif path[0] == 'properties':
+				assert len(path) == 2
+				property_name = path[1]
+				self.set_patch_properties(module, obj, op, property_name, value)  # TODO: append errors to multi validation error
+			else:
+				raise TypeError()
+
+	def set_patch_properties(self, module, obj, op, property_name, value):
+		def _parse_complex_syntax_input(value):
+			if '"' not in value:
+				return value.split(' ')
+			else:
+				return [x.strip() for x in value.split('"') if x.strip()]
+
+		try:
+			prop = module.module.property_descriptions[property_name]
+		except KeyError:
+			if property_name == 'objectFlag':
+				return
+			raise
+
+		if value is not None and univention.admin.syntax.is_syntax(prop.syntax, univention.admin.syntax.complex):
+			value = _parse_complex_syntax_input(value)
+
+		current_values = obj[property_name] if prop.multivalue else [obj[property_name]]
+		current_values = list(current_values or [])
+		if current_values == ['']:
+			current_values = []
+
+		if op == 'replace':
+			current_values = []
+
+		if op in ('add', 'replace'):
+			if value in current_values:
+				raise Exception('WARNING: cannot append %s to %s, value exists' % (value, property_name))
+			if prop.multivalue:
+				value = current_values + [value]
+			#else:
+			#	out.append('WARNING: using --append on a single value property (%s) is not supported.' % (property_name,))
+		elif op == 'remove' and value is None:
+			pass
+		elif op == 'remove':
+			try:
+				normalized_val = prop.syntax.parse(value)
+			except (univention.admin.uexceptions.valueInvalidSyntax, univention.admin.uexceptions.valueError):
+				normalized_val = None
+
+			if value in current_values:
+				current_values.remove(value)
+			elif normalized_val is not None and normalized_val in current_values:
+				current_values.remove(normalized_val)
+			else:
+				raise Exception("WARNING: cannot remove %s from %s, value does not exist" % (value, property_name))
+
+			if prop.multivalue:
+				value = current_values
+			else:
+				value = None
+
+		password_properties = module.password_properties
+		if property_name in password_properties and value is not None:
+			MODULE.info('Setting password property %s' % (property_name,))
+		else:
+			MODULE.info('Setting property %s to %r' % (property_name, value))
+
+		try:
+			try:
+				obj[property_name] = value
+			except KeyError:
+				if property_name != 'objectFlag':
+					raise
+			except univention.admin.uexceptions.ipOverridesNetwork as exc:
+				raise Exception('WARNING: %s' % exc.message)
+			except udm_errors.valueMayNotChange:
+				if obj[property_name] == value:  # UDM does not check equality before raising the exception
+					return
+				raise udm_errors.valueMayNotChange()  # the original exception is ugly!
+			except udm_errors.valueRequired:
+				if value is None:
+					# examples where this happens:
+					# "password" of users/user: because password is required but on modify() None is send, which must not alter the current password
+					# "unixhome" of users/user: is required, set to None in the request, the default value is set afterwards in create(). Bug #50053
+					if property_name in password_properties:
+						MODULE.info('Ignore unsetting password property %s' % (property_name,))
+					else:
+						current_value = obj.info.pop(property_name, None)
+						MODULE.info('Unsetting property %s value %r' % (property_name, current_value))
+					return
+				raise
+		except (udm_errors.valueInvalidSyntax, udm_errors.valueError, udm_errors.valueMayNotChange, udm_errors.valueRequired, udm_errors.noProperty) as exc:
+			multi_error = MultiValidationError()
+			try:
+				self.raise_formatted_validation_error(_('The property %(name)s has an invalid value: %(details)s'), property_name, value, details=str(UDM_Error(exc)))
+			except ValidationError as exc:
+				multi_error.add_error(exc, property_name)
+				raise multi_error
 
 	@tornado.gen.coroutine
 	def move(self, module, dn, position):

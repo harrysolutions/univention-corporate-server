@@ -541,6 +541,17 @@ class Object(Client):
 	def delete(self, remove_referring=False):
 		return self.client.request('DELETE', self.uri)
 
+	def json_patch(self, patch, reload=True):
+		headers = dict((key, value) for key, value in {
+			'If-Unmodified-Since': self.last_modified,
+			'If-Match': self.etag,
+			'Content-Type': 'application/json-patch+json',
+		}.items() if value)
+
+		response = self.client.make_request('PATCH', self.uri, data=patch, allow_redirects=False, **headers)
+		response = self._follow_redirection(response, reload)  # move() causes multiple redirections!
+		return response
+
 	def move(self, position):
 		self.position = position
 		self.save()
