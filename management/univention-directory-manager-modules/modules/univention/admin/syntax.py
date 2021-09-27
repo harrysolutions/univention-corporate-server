@@ -55,6 +55,7 @@ from typing import TYPE_CHECKING, Any, Callable, Iterable, List, Optional, Patte
 
 import dateutil
 import ldap
+import ldap.dn
 import PIL
 import pytz
 import six
@@ -310,7 +311,7 @@ class ISyntax(object):
 
 		if getattr(self, 'depends', None) is not None:
 			descr.setdefault('dynamicOptions', {})
-			descr['dynamicOptions']['$name$'] = self.depends
+			descr['dynamicOptions']['$name$'] = self.depends  # TODO: we only need this for DNS_ForwardZoneList, IP_AddressList, MAC_AddressList, ...?
 			descr['depends'] = self.depends
 
 		def subsyntaxes(udm_property):
@@ -442,6 +443,11 @@ class select(ISyntax):
 	widget = 'ComboBox'
 	widget_default_search_pattern = []
 
+	depends = None  # type: Optional[str]
+	"""The name of another |UDM| property this syntax depends on."""
+	javascript_dependency = False  # type: bool
+	"""Whether dependencies should be resolved via Javascript (instead of a further request)"""
+
 	@classmethod
 	def parse(self, text):
 		# type: (Any) -> Optional[str]
@@ -458,6 +464,7 @@ class select(ISyntax):
 
 	@classmethod
 	def get_choices(cls, lo, options):
+		"""Get the choices w.r.t. dependencies"""
 		# sort choices before inserting / appending some special items
 		try:
 			class_choices = cls.choices
@@ -469,14 +476,26 @@ class select(ISyntax):
 		if cls.empty_value and class_choices and class_choices[0][0] != '':
 			choices.insert(0, ('', ''))
 
+		if cls.depends in options.get('dependencies', {}):
+			# by default return the dependency values!
+			values = []
+			for value in options['dependencies'][cls.depends]:
+				if value not in values:
+					values.append(value)
+			return [(val, val) for val in values]
+
 		return choices
 
 	def get_widget_choices_options(self, udm_property):
 		opts = None
 		if self.depends:
-			opts = {
-				'dynamicValues': 'javascript:umc/modules/udm/callbacks:setDynamicValues',
-			}
+			if self.javascript_dependency:
+				opts = {
+					'dynamicValues': 'javascript:umc/modules/udm/callbacks:setDynamicValues',
+				}
+			else:
+				opts = _default_widget_options(self)
+
 		return opts
 
 
@@ -3631,6 +3650,19 @@ class ldapAttribute(_CachedLdap):
 	Syntax to enter a |LDAP| attribute name.
 	"""
 	_class = AttributeType
+	depends = 'objectClass'
+
+	@classmethod
+	def get_choices(cls, lo, options):
+		if cls.depends not in options.get('dependencies', {}):  # pragma: no cover
+			return cls.choices
+
+		subschema = lo.get_schema()
+		must, may = subschema.attribute_types([options['dependencies'][cls.depends]])
+		attrs = set()
+		for atype in dict(must, **may).values():
+			attrs.update(atype.names)
+		return [(attr, attr) for attr in sorted(attrs, key=lambda name: name.lower())]
 
 
 class ldapFilter(simple):
@@ -4244,6 +4276,7 @@ class IP_AddressList(ipAddress, select):
 	"""
 	choices = []  # type: Sequence[Tuple[str, str]]
 	depends = 'ip'
+	javascript_dependency = True
 
 	widget = select.widget
 
@@ -4266,6 +4299,7 @@ class MAC_AddressList(MAC_Address, select):
 	"""
 	choices = []  # type: Sequence[Tuple[str, str]]
 	depends = 'mac'
+	javascript_dependency = True
 
 	widget = select.widget
 
@@ -4348,8 +4382,19 @@ class DNS_ForwardZoneList(select):
 	Syntax to select |DNS| forward zone for alias entries.
 	>>> DNS_ForwardZoneList.parse('some name')
 	'some name'
+	>>> DNS_ForwardZoneList.get_choices(None, {'dependencies': {'dnsEntryZoneForward': [["zoneName=example.org,cn=dns,dc=base", "1.2.3.4"]]}})
+	[('example.org', 'example.org')]
 	"""
 	depends = 'dnsEntryZoneForward'
+	javascript_dependency = True
+
+	@classmethod
+	def get_choices(cls, lo, options):
+		choices = super(cls, cls).get_choices(lo, options)
+		if cls.depends not in options.get('dependencies', {}):  # pragma: no cover
+			return choices
+		values = [ldap.dn.explode_rdn(x[0][0], True)[0] for x in choices]
+		return [(val, val) for val in sorted(values)]
 
 
 class dnsEntryAlias(complex):
@@ -5519,13 +5564,22 @@ class allModuleOptions(combobox):
 	Syntax to select options for |UDM| modules.
 	"""
 
+	depends = 'module'
+	javascript_dependency = False
+
 	@classmethod
 	def update_choices(cls):
-		modules = univention.admin.modules.modules.values()
-		cls.choices = sorted([
+		cls.choices = cls.get_choices(None, {'dependencies': {cls.depends: list(univention.admin.modules.modules)}})
+
+	@classmethod
+	def get_choices(cls, lo, options):
+		if cls.depends not in options.get('dependencies', {}):  # pragma: no cover
+			return cls.choices
+		modules = options['dependencies'][cls.depends]
+		return sorted([
 			(key, opt.short_description)
 			for module in modules
-			for key, opt in getattr(module, 'options', {}).items()
+			for key, opt in getattr(univention.admin.modules.get(module), 'options', {}).items()
 			if key != 'default'
 		], key=lambda x: x[1])
 
