@@ -29,9 +29,18 @@
 # /usr/share/common-licenses/AGPL-3; if not, see
 # <https://www.gnu.org/licenses/>.
 
-import requests
+import json
+
+import jwt
+from jwt.algorithms import RSAAlgorithm
 from six import with_metaclass
+from six.moves.urllib_parse import urlencode
+from tornado import escape, web
+from tornado.auth import OAuth2Mixin
+from tornado.httpclient import AsyncHTTPClient, HTTPClientError, HTTPError, HTTPRequest
+
 from univention.portal import Plugin
+import univention.portal.config as config
 from univention.portal.log import get_logger
 from univention.portal.user import User
 
@@ -62,13 +71,16 @@ class Authenticator(with_metaclass(Plugin)):
 	def get_auth_mode(self, request):  # pragma: no cover
 		return "ucs"
 
-	def login_request(self, request):  # pragma: no cover
+	async def login_request(self, request):  # pragma: no cover
 		pass
 
-	def login_user(self, request):  # pragma: no cover
+	async def login_user(self, request):  # pragma: no cover
 		pass
 
-	def get_user(self, request):  # pragma: no cover
+	async def logout_user(self, request):  # pragma: no cover
+		pass
+
+	async def get_user(self, request):  # pragma: no cover
 		return User(username=None, display_name=None, groups=[], headers={})
 
 	def refresh(self, reason=None):  # pragma: no cover
@@ -99,13 +111,13 @@ class UMCAuthenticator(Authenticator):
 	def refresh(self, reason=None):
 		return self.group_cache.refresh(reason=reason)
 
-	def get_user(self, request):
+	async def get_user(self, request):
 		cookies = dict((key, morsel.value) for key, morsel in request.cookies.items())
-		username, display_name = self._get_username(cookies)
+		username, display_name = await self._get_username(cookies)
 		groups = self.group_cache.get().get(username, [])
 		return User(username, display_name=display_name, groups=groups, headers=dict(request.request.headers))
 
-	def _get_username(self, cookies):
+	async def _get_username(self, cookies):
 		for cookie in cookies:
 			if cookie.startswith("UMCSessionId"):
 				# UMCSessionId-1234 -> Host: localhost:1234
@@ -118,24 +130,171 @@ class UMCAuthenticator(Authenticator):
 			return None, None
 		headers = {"Host": "localhost" + host_port}
 		get_logger("user").debug("searching user for cookies=%r" % cookies)
-		username = self._ask_umc(cookies, headers)
+		username = await self._ask_umc(cookies, headers)
 		if username is None:
 			get_logger("user").debug("no user found")
 			return None, None
 		else:
-			get_logger("user").debug("found %s" % username)
+			get_logger("user").debug("found %s" % (username,))
 			return username.lower(), username
 
-	def _ask_umc(self, cookies, headers):
+	async def _ask_umc(self, cookies, headers):
 		try:
-			response = requests.get(self.umc_session_url, cookies=cookies, headers=headers)
-			data = response.json()
+			headers['Cookie'] = '; '.join('='.join(c) for c in cookies.items())
+			req = HTTPRequest(
+				self.umc_session_url,
+				method="GET",
+				headers=headers
+			)
+			http_client = AsyncHTTPClient()
+			response = await http_client.fetch(req)
+			data = json.loads(response.body.decode('UTF-8'))
 			username = data["result"]["username"]
-		except requests.RequestException as e:
-			get_logger("user").error("connection failed: %s" % e)
+		except HTTPError as exc:
+			get_logger("user").error("request failed: %s" % exc)
+		except EnvironmentError as exc:
+			get_logger("user").error("connection failed: %s" % exc)
 		except ValueError:
 			get_logger("user").error("malformed answer!")
 		except KeyError:
 			get_logger("user").warning("session unknown!")
 		else:
 			return username
+
+
+class OpenIDConnectAuthenticator(Authenticator, OAuth2Mixin):
+
+	oidc_server = config.fetch('OIDC_SERVER')
+	oidc_client_realm = config.fetch('OIDC_CLIENT_REALM')
+	_OAUTH_AUTHORIZE_URL = "%s/auth/realms/%s/protocol/openid-connect/auth" % (oidc_server, oidc_client_realm)
+	_OAUTH_ACCESS_TOKEN_URL = "%s/auth/realms/%s/protocol/openid-connect/token" % (oidc_server, oidc_client_realm)
+	_OAUTH_LOGOUT_URL = "%s/auth/realms/%s/protocol/openid-connect/logout" % (oidc_server, oidc_client_realm)
+	_OAUTH_USERINFO_URL = "%s/auth/realms/%s/protocol/openid-connect/userinfo" % (oidc_server, oidc_client_realm)
+
+	sessions = {}
+
+	def get_auth_mode(self, request):
+		return "ucs"
+
+	async def get_authenticated_user(self, redirect_uri, code):
+		oidc_client_id = config.fetch('OIDC_CLIENT_ID')
+		http = self.get_auth_http_client()
+		body = urlencode({
+			"redirect_uri": redirect_uri,
+			"code": code,
+			"client_id": oidc_client_id,
+			"client_secret": config.fetch('OIDC_SECRET'),
+			"grant_type": "authorization_code",
+		})
+		response = await http.fetch(
+			self._OAUTH_ACCESS_TOKEN_URL,
+			method="POST",
+			headers={"Content-Type": "application/x-www-form-urlencoded"},
+			body=body,
+		)
+		return escape.json_decode(response.body)
+
+	async def login_request(self, request):
+		code = request.get_argument('code', False)
+		if code:
+			try:
+				access = await self.get_authenticated_user(
+					redirect_uri=request.reverse_abs_url('login'),
+					code=request.get_argument('code')
+				)
+			except HTTPClientError as exc:
+				raise web.HTTPError(400, 'Could not authenticate user: %s' % (json.loads(exc.response.body),))
+
+			access_token = access['access_token']
+			if not access_token:
+				raise web.HTTPError(400, "Could no receive access token")
+
+			user_info_req = HTTPRequest(
+				self._OAUTH_USERINFO_URL,
+				method="GET",
+				headers={
+					"Accept": "application/json",
+					"Authorization": "Bearer {}".format(access_token)
+				},
+			)
+			http_client = AsyncHTTPClient()
+			user_info_res = await http_client.fetch(user_info_req)
+			user_info_res_json = json.loads(user_info_res.body.decode('utf-8'))
+			request.set_secure_cookie(request.application.settings['oidc_cookie_user'], user_info_res_json['preferred_username'])
+			request.set_secure_cookie(request.application.settings['oidc_cookie_token'], access_token)
+			self.sessions[access_token.encode('ASCII')] = user_info_res_json
+			# currently not required, all infos are in the first userinfo request
+			# user = await self.oauth2_request(
+			# 	url=self._OAUTH_USERINFO_URL,
+			# 	access_token=access['access_token'],
+			# 	post_args={},
+			# )
+			request.redirect(request.reverse_abs_url('index'))
+		else:
+			self.redirect = request.redirect
+			self.authorize_redirect(
+				redirect_uri=request.reverse_abs_url('login'),
+				client_id=request.application.settings['oidc_client_id'],
+				scope=['profile', 'email'],
+				response_type='code',
+				extra_params={'approval_prompt': 'auto'}
+			)
+
+	async def logout_user(self, request):
+		request.clear_cookie(request.application.settings['oidc_cookie_user'])
+		request.clear_cookie(request.application.settings['oidc_cookie_token'])
+		# TODO: initiate logout
+		request.redirect(request.reverse_abs_url('index'))
+
+	async def get_user(self, request):
+		user = self.sessions.get(request.get_secure_cookie(request.application.settings['oidc_cookie_token']))
+		# user = await self.get_current_user(request)
+		if user:
+			return User(username=user['preferred_username'], display_name=user['name'], groups=user['groups'], headers=dict(request.request.headers))
+		return User(None, display_name=None, groups=[], headers=dict(request.request.headers))
+
+	async def get_current_user(self, request):
+		# user = request.get_secure_cookie(request.application.settings['oidc_cookie_user'])
+		bearer = request.get_secure_cookie(request.application.settings['oidc_cookie_token'])
+		request = HTTPRequest(request.application.settings['oidc_cert_url'], method='GET')
+		http_client = AsyncHTTPClient()
+
+		response = await http_client.fetch(request, raise_error=False)
+
+		if response.code != 200:
+			get_logger("user").warning("Fetching certificate failed")
+			raise web.HTTPError(500)
+
+		jwk = json.loads(response.body.decode('utf-8'))
+		try:
+			public_key = RSAAlgorithm.from_jwk(json.dumps(jwk['keys'][0]))
+			payload = jwt.decode(bearer, public_key, algorithms='RS256', options={'verify_aud': False})
+		except jwt.ExpiredSignatureError:
+			get_logger("user").warning("Signature expired")
+			raise web.HTTPError(401, reason='Unauthorized')
+		except jwt.InvalidSignatureError:
+			get_logger("user").error("Invalid signature")
+			raise web.HTTPError(401, reason='Unauthorized')
+
+		return payload
+
+
+class MultiAuthenticator(Authenticator):
+
+	def get_auth_mode(self, request):
+		return "ucs"
+
+	async def login_request(self, request):
+		pass
+
+	async def login_user(self, request):
+		pass
+
+	async def logout_user(self, request):
+		pass
+
+	async def get_user(self, request):
+		return User(username=None, display_name=None, groups=[], headers={})
+
+	def refresh(self, reason=None):
+		pass
