@@ -79,7 +79,7 @@ from ..base import Base
 from ..error import UMC_Error, Unauthorized, BadRequest, Forbidden, ServiceUnavailable, BadGateway
 from ..ldap import get_machine_connection, reset_cache as reset_ldap_connection_cache
 from ..modules.sanitizers import StringSanitizer, DictSanitizer
-from ..modules.decorators import sanitize, sanitize_args, allow_get_request
+from ..modules.decorators import sanitize, allow_get_request
 
 try:
 	from html import escape, unescape
@@ -1120,7 +1120,7 @@ class Processes(object):
 					errno.ENFILE: _('There are too many opened files on the server.'),
 					errno.ENOSPC: _('There is not enough free space on the server.'),
 					errno.ENOENT: _('The executable was not found.'),
-				}.get(exc.errno, _('An unknown operating system error occurred (%s).' % (exc,)))
+				}.get(exc.errno, _('An unknown operating system error occurred (%s).') % (exc,))
 				raise ServiceUnavailable(message)
 			self.__processes[module_name] = mod_proc
 
