@@ -53,9 +53,10 @@ import six
 from ipaddress import ip_address
 from tornado.web import Application as TApplication, HTTPError
 from tornado.httpserver import HTTPServer
+from tornado.netutil import bind_sockets
 import tornado
 from concurrent.futures import ThreadPoolExecutor
-from multiprocessing import Manager
+# from multiprocessing import Manager
 
 from univention.management.console.protocol.message import Request
 from univention.management.console.protocol.session import Resource, Auth, Upload, Command, UCR, Meta, Info, Modules, Categories, UserPreferences, Hosts, Set, SetPassword, SetLocale, SetUserPreferences
@@ -89,12 +90,12 @@ TEMPUPLOADDIR = '/var/tmp/univention-management-console-frontend'
 if 422 not in tornado.httputil.responses:
 	tornado.httputil.responses[422] = 'Unprocessable Entity'  # Python 2 is missing this status code
 
-m = Manager()
+# m = Manager()
 
 
 def SharedMemoryDict(*args, **kwargs):
 	return {}  # pass to enable
-	return m.dict(*args, **kwargs)
+	# return m.dict(*args, **kwargs)
 
 
 class NotFound(HTTPError):
@@ -833,6 +834,7 @@ class Server(object):
 			help='How many processes to start'
 		)
 		self.options = self.parser.parse_args()
+		self._child_number = None
 
 		# cleanup environment
 		os.environ.clear()
@@ -859,7 +861,7 @@ class Server(object):
 		if self.server._child_number is not None:
 			return  # we are the child process
 		try:
-			children = list(self.server._children.items())
+			children = list(self._children.items())
 		except EnvironmentError:
 			children = []
 		for child, pid in children:
@@ -878,14 +880,19 @@ class Server(object):
 		except (ValueError, resource.error) as exc:
 			CORE.error('Could not raise NOFILE resource limits: %s' % (exc,))
 
+		sockets = bind_sockets(get_int('umc/http/port', 8090), ucr.get('umc/http/interface', '127.0.0.1'), backlog=get_int('umc/http/requestqueuesize', 100), reuse_port=True)
+		if self.options.processes != 1:
+			CORE.process('Starting with %r processes' % (self.options.processes,))
+			self._child_number = tornado.process.fork_processes(self.options.processes, 0)
+
 		application = Application(serve_traceback=ucr.is_true('umc/http/show_tracebacks', True))
 		server = HTTPServer(
 			application,
 			idle_connection_timeout=get_int('umc/http/response-timeout', 310),  # is this correct? should be internal response timeout
 			max_body_size=get_int('umc/http/max_request_body_size', 104857600),
 		)
-		server.bind(get_int('umc/http/port', 8090), ucr.get('umc/http/interface', '127.0.0.1'), backlog=get_int('umc/http/requestqueuesize', 100))
-		server.start(self.options.processes)
+		self.server = server
+		server.add_sockets(sockets)
 
 		channel = logging.StreamHandler()
 		channel.setFormatter(tornado.log.LogFormatter(fmt='%(color)s%(asctime)s  %(levelname)10s      (%(process)9d) :%(end_color)s %(message)s', datefmt='%d.%m.%y %H:%M:%S'))

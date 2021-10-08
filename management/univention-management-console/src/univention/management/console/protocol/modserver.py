@@ -38,6 +38,7 @@ the UMC server class
 
 import sys
 import json
+import signal
 import base64
 import traceback
 import logging
@@ -54,7 +55,7 @@ import tornado.httputil
 from .message import Request, Response
 from .definitions import MODULE_ERR_INIT_FAILED, SUCCESS
 
-from univention.management.console.log import MODULE, PROTOCOL
+from univention.management.console.log import MODULE
 from univention.management.console.config import ucr
 
 from univention.lib.i18n import Translation
@@ -80,14 +81,16 @@ class ModuleServer(object):
 	:param bool check_acls: if False the module server does not check the permissions (**dangerous!**)
 	"""
 
-	def __init__(self, socket, module, timeout=300):
+	def __init__(self, socket, module, logfile, timeout=300):
 		# type: (str, str, int, bool) -> None
+		self.server = None
 		self.__socket = socket
 		self.__module = module
+		self.__logfile = logfile
 		self.__timeout = timeout
-		self.__time_remaining = timeout
+		# self.__time_remaining = timeout
 		self.__active_requests = {}
-		self._timer()
+		# self._timer()
 		self.__init_etype = None
 		self.__init_exc = None
 		self.__init_etraceback = None
@@ -166,29 +169,44 @@ class ModuleServer(object):
 			body = json.dumps(response.body).encode('ASCII')
 		request.finish(body)
 
-	def _timer(self):
-		# type: () -> None
-		"""In order to avoid problems when the system time is changed (e.g.,
-		via rdate), we register a timer event that counts down the session
-		timeout second-wise."""
-		# count down the remaining time
-		if not self.__active_requests:
-			self.__time_remaining -= 1
+	# def _timer(self):
+	# 	# type: () -> None
+	# 	"""In order to avoid problems when the system time is changed (e.g.,
+	# 	via rdate), we register a timer event that counts down the session
+	# 	timeout second-wise."""
+	# 	# count down the remaining time
+	# 	if not self.__active_requests:
+	# 		self.__time_remaining -= 1
 
-		if self.__time_remaining <= 0:
-			# module has timed out
-			self._timed_out()
-		else:
-			# count down the timer second-wise (in order to avoid problems when
-			# changing the system time, e.g. via rdate)
-			notifier.timer_add(1000, self._timer)
+	# 	if self.__time_remaining <= 0:
+	# 		# module has timed out
+	# 		self._timed_out()
+	# 	else:
+	# 		# count down the timer second-wise (in order to avoid problems when
+	# 		# changing the system time, e.g. via rdate)
+	# 		notifier.timer_add(1000, self._timer)
+
+	def signal_handler_alarm(self, signo, frame):
+		if self.__active_requests:
+			MODULE.info('There are still open requests - do not shutdown')
+			signal.alarm(1)
+			return
+		MODULE.info('Committing suicide')
+		io_loop = tornado.ioloop.IOLoop.current()
+
+		def shutdown():
+			if self.__handler:
+				self.__handler.destroy()
+			self.server.stop()
+			io_loop.stop()
+		io_loop.add_callback_from_signal(shutdown)
+		self._timed_out()
 
 	def _timed_out(self):
 		# type: () -> NoReturn
 		MODULE.info('Committing suicide')
 		if self.__handler:
 			self.__handler.destroy()
-		self.exit()
 		sys.exit(0)
 
 	def error_handling(self, request, method, etype, exc, etraceback):
@@ -214,23 +232,26 @@ class ModuleServer(object):
 
 	def handle(self, msg, method, username, password, user_dn, auth_type, locale):
 		from ..error import NotAcceptable
-		self.__time_remaining = self.__timeout
-		PROTOCOL.info('Received UMCP %s REQUEST %s' % (msg.command, msg.id))
+		# self.__time_remaining = self.__timeout
+		signal.alarm(self.__timeout)
+		MODULE.process('Received request %r: %r' % (' '.join(msg.arguments or [msg.command, method]), (username, msg.flavor, auth_type, locale)))
 		self.__active_requests[msg.id] = msg
 
 		if msg.command == 'EXIT':
-			shutdown_timeout = 100
-			MODULE.info("EXIT: module shutdown in %dms" % shutdown_timeout)
+			shutdown_timeout = 1
+			MODULE.info("EXIT: module shutdown in %ds" % shutdown_timeout)
 			# shutdown module after one second
 			resp = Response(msg)
 			resp.status = SUCCESS
-			resp.message = 'module %s will shutdown in %dms' % (msg.arguments[0], shutdown_timeout)
+			resp.message = 'module %s will shutdown in %ds' % (msg.arguments[0], shutdown_timeout)
 			self._reply(resp)
-			notifier.timer_add(shutdown_timeout, self._timed_out)
+			# notifier.timer_add(shutdown_timeout, self._timed_out)
+			signal.alarm(1)
 			return
 
 		if self.__init_etype:
-			notifier.timer_add(10000, self._timed_out)
+			# notifier.timer_add(10000, self._timed_out)
+			signal.alarm(1)
 			six.reraise(self.__init_etype, self.__init_exc, self.__init_etraceback)
 
 		if not self.__initialized:
@@ -246,6 +267,7 @@ class ModuleServer(object):
 			MODULE.process('Initializing module.')
 			try:
 				self.__handler.init()
+				self.__initialized = True
 			except Exception:
 				try:
 					exc_info = sys.exc_info()
@@ -256,6 +278,7 @@ class ModuleServer(object):
 				return
 
 		self.__handler.execute(method, msg)
+		MODULE.info('Executed handler')
 
 	def __enter__(self):
 		application = Application([
@@ -265,11 +288,14 @@ class ModuleServer(object):
 
 		server = HTTPServer(application)
 		server.add_socket(bind_unix_socket(self.__socket))
+		self.server = server
 		server.start()
 
+		signal.signal(signal.SIGALRM, self.signal_handler_alarm)
 		channel = logging.StreamHandler()
+		channel = logging.FileHandler('/var/log/univention/%s.log' % (self.__logfile,))
 		channel.setFormatter(tornado.log.LogFormatter(fmt='%(color)s%(asctime)s  %(levelname)10s      (%(process)9d) :%(end_color)s %(message)s', datefmt='%d.%m.%y %H:%M:%S'))
-		logger = logging.getLogger()
+		logger = logging.getLogger('tornado.access')
 		logger.setLevel(logging.DEBUG)
 		logger.addHandler(channel)
 
@@ -329,7 +355,6 @@ class Handler(RequestHandler):
 			if name == self.suffixed_cookie_name('UMCSessionId'):
 				msg.cookies['UMCSessionId'] = value
 		msg.request_handler = self
-		MODULE.process('Received request %r' % ((method, msg.flavor, msg.options, username, user_dn, auth_type, locale),))
 		self.server.handle(msg, method, username, password, user_dn, auth_type, locale)
 
 	def suffixed_cookie_name(self, cookie_name):

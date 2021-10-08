@@ -215,7 +215,7 @@ class ModuleProcess(object):
 		yield tornado.gen.sleep(3.0)
 		if proc.poll() is None:
 			proc.kill()
-		# TOD: if not succeeds, kill all childs
+		# TODO: if not succeeds, kill all childs
 		CORE.info('ModuleProcess: child stopped')
 		self.__process = None
 
@@ -336,7 +336,10 @@ class Session(object):
 
 	@classmethod
 	def get(cls, session_id):
-		return cls.sessions.get(session_id, cls(session_id))
+		session = cls.sessions.get(session_id)
+		if not session:
+			session = cls(session_id)
+		return session
 
 	@classmethod
 	def put(cls, session_id, session):
@@ -523,8 +526,10 @@ class Resource(RequestHandler):
 
 	# old
 	def write_error(self, status_code, exc_info=None, **kwargs):
-		if exc_info and isinstance(exc_info[1], HTTPError):
+		if exc_info and isinstance(exc_info[1], (HTTPError, UMC_Error)):
 			exc = exc_info[1]
+			if isinstance(exc, UMC_Error):  # FIXME: just a workaround!
+				exc = UMC_HTTPError(exc.status, exc.msg, )
 			traceback = None
 			body = None
 			if isinstance(exc, UMC_HTTPError) and self.settings.get("serve_traceback") and isinstance(exc.error, dict) and exc.error.get('traceback'):
@@ -1023,7 +1028,7 @@ class Command(Resource):
 		session = self.current_user
 		acls = session.acls
 
-		module_name = acls.get_module_providing(moduleManager, command)  # TODO: remove
+		# module_name = acls.get_module_providing(moduleManager, command)  # TODO: remove
 		module_name = acls.get_module_providing(moduleManager, command)
 		if not module_name:
 			CORE.warn('No module provides %s' % (command))
