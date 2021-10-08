@@ -825,7 +825,7 @@ class Server(object):
 			help='if given than debugging is activated and set to the specified level [default: %(default)s]'
 		)
 		self.parser.add_argument(
-			'-L', '--log-file', default='management-console-web-server',
+			'-L', '--log-file', default='stdout',
 			help='specifies an alternative log file [default: %(default)s]'
 		)
 		self.parser.add_argument(
@@ -839,10 +839,7 @@ class Server(object):
 		os.environ['PATH'] = '/bin:/sbin:/usr/bin:/usr/sbin'
 
 		# init logging
-		if True or not self.options.daemon_mode:
-			log_init('/dev/stderr', self.options.debug, self.options.processes > 1)
-		else:
-			log_init(self.options.log_file, self.options.debug, self.options.processes > 1)
+		log_init(self.options.log_file, self.options.debug, self.options.processes > 1)
 
 		os.umask(0o077)
 
