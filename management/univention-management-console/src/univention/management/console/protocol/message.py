@@ -91,6 +91,8 @@ class Message(object):
 		self.mimetype = mime_type
 		if mime_type == MIMETYPE_JSON:
 			self.options = options if options is not None else {}
+		self.cookies = {}
+		self.headers = {}
 
 	def _create_id(self):
 		# type: () -> None
@@ -146,13 +148,13 @@ class Message(object):
 	flavor = property(lambda self: self._get_key('flavor'), lambda self, value: self._set_key('flavor', value))
 
 	#: contains HTTP request / response headers
-	headers = property(lambda self: self._get_key('headers', {}), lambda self, value: self._set_key('headers', value))
+	#headers = property(lambda self: self._get_key('headers', {}), lambda self, value: self._set_key('headers', value))
 
 	#: contains parsed request / response cookies
-	cookies = property(lambda self: self._get_key('cookies', {}), lambda self, value: self._set_key('cookies', value))
+	#cookies = property(lambda self: self._get_key('cookies', {}), lambda self, value: self._set_key('cookies', value))
 
 	#: contains the HTTP request method
-	http_method = property(lambda self: self._get_key('method'), lambda self, value: self._set_key('method', value))
+	#http_method = property(lambda self: self._get_key('method'), lambda self, value: self._set_key('method', value))
 
 
 class Request(Message):

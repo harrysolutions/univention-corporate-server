@@ -36,6 +36,7 @@ the UMC server class
 :class:`~univention.management.console.protocol.server.Server`.
 """
 
+import re
 import sys
 import json
 import signal
@@ -45,6 +46,7 @@ import logging
 import threading
 
 import notifier
+import notifier.threads
 import six
 import tornado.log
 from tornado.web import RequestHandler, Application, HTTPError
@@ -132,8 +134,16 @@ class ModuleServer(object):
 			self.__handler.signal_connect('success', self._reply)
 
 	def _reply(self, response):
+		# any exception here will crash the process!
 		try:
-			self.__reply(response)
+			return self.__reply(response)
+
+			async def reply():
+				self.__reply(response)
+			io_loop = tornado.ioloop.IOLoop.current()
+			io_loop.run_sync(reply)
+##			io_loop.add_callback(self.__reply, response)
+#			self.__reply(response)
 		except Exception:
 			MODULE.error(traceback.format_exc())
 			raise
@@ -301,6 +311,17 @@ class ModuleServer(object):
 
 		self.running = True
 
+		#import asyncio
+		#from tornado.platform.asyncio import AnyThreadEventLoopPolicy
+		#asyncio.set_event_loop_policy(AnyThreadEventLoopPolicy())
+
+		class Simple(notifier.threads.Simple):
+			def run(self):
+				io_loop = tornado.ioloop.IOLoop.current()
+				future = io_loop.run_in_executor(None, self._run)
+				io_loop.add_future(future, lambda f: self.announce())
+		notifier.threads.Simple = Simple
+
 		def loop():
 			while self.running:
 				notifier.step()
@@ -337,7 +358,9 @@ class Handler(RequestHandler):
 		username, password = self.parse_authorization()
 		user_dn = self.request.headers.get('X-User-Dn')
 		auth_type = self.request.headers.get('X-UMC-AuthType')
-		mimetype = self.request.headers.get('Content-Type')
+		mimetype = re.split('[ ;]', self.request.headers.get('Content-Type', ''))[0]
+		if mimetype.startswith('application/json'):
+			mimetype = 'application/json'
 		locale = self.locale.code
 		msg = Request('COMMAND', [path], mime_type=mimetype)  # TODO: UPLOAD
 		if mimetype.startswith('application/json'):

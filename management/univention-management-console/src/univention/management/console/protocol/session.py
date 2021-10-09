@@ -67,8 +67,8 @@ from cherrypy.lib.httputil import valid_status
 import univention.debug as ud
 import univention.admin.uexceptions as udm_errors
 
+from univention.lib.i18n import Locale
 from .message import Request
-
 from ..resources import moduleManager, categoryManager
 from ..auth import AuthHandler
 from ..pam import PamAuth, PasswordChangeFailed
@@ -178,6 +178,8 @@ class ModuleProcess(object):
 
 	@tornado.gen.coroutine
 	def request(self, method, uri, headers=None, body=None):
+		if uri.startswith('https://'):
+			uri = 'http://' + uri[8:]
 		request = tornado.httpclient.HTTPRequest(
 			uri,
 			method=method,
@@ -1053,7 +1055,8 @@ class Command(Resource):
 
 		headers = self.get_request_header(session, methodname)
 
-		process = session.processes.get_process(module_name, self.locale.code)
+		locale = str(Locale(self.locale.code))
+		process = session.processes.get_process(module_name, locale)
 		CORE.info('Passing request to module %s' % (module_name,))
 
 		try:
@@ -1362,8 +1365,18 @@ class Hosts(Resource):
 
 class Set(Resource):
 
+	@tornado.gen.coroutine
 	def post(self):
+		is_univention_lib = self.request.headers.get('User-Agent', '').startswith('UCS/')
 		for key in self.request.body_arguments:
+			cls = {'password': SetPassword, 'user': SetUserPreferences, 'locale': SetLocale}.get(key)
+			if is_univention_lib and cls:
+				# for backwards compatibility with non redirecting clients we cannot redirect here :-(
+				p = cls(self.application, self.request)
+				p._ = self._
+				p.finish = self.finish
+				yield p.post()
+				return
 			if key == 'password':
 				self.redirect('/univention/set/password', status=307)
 			elif key == 'user':
@@ -1436,7 +1449,7 @@ class SetUserPreferences(UserPreferences):
 		lo = self.current_user.user.get_user_ldap_connection()
 		# eliminate double entries
 		preferences = self._get_user_preferences(lo)
-		preferences.update(dict(self.request.body_arguments['preferences']))
+		preferences.update(dict(self.request.body_arguments['user']['preferences']))
 		if preferences:
 			self._set_user_preferences(lo, preferences)
 		self.content_negotiation(None)

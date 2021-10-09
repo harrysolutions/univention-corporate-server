@@ -315,7 +315,7 @@ class Application(TApplication):
 			(r'/upload/(.+)', Command),
 			(r'/command/(.+)', Command),
 			(r'/get/session-info', SessionInfo),
-			(r'/get/ipaddress', GetIPAdress),
+			(r'/get/ipaddress', GetIPAddress),
 			(r'/get/ucr', UCR),
 			(r'/get/meta', Meta),
 			(r'/get/info', Info),
@@ -384,7 +384,7 @@ class SessionInfo(Resource):
 		return self.get()
 
 
-class GetIPAdress(Resource):
+class GetIPAddress(Resource):
 
 	def get(self):
 		try:
