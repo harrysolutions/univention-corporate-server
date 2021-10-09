@@ -5,6 +5,8 @@
 [ ] set/
 [ ] NewSession
 [ ] tornado logging into file? or stdout?
-[ ] test multiprocessing
-[ ] backport shared memory https://github.com/PKizzle/shared_memory_backport https://www.reddit.com/r/Python/comments/awfzxg/cheap_backport_of_multiprocessingshared_memory/ https://docs.python.org/3.8/library/multiprocessing.shared_memory.html
+[ ] tornado module process logging into logfile or univention.debug?
+[ ] test multiprocessing - e.g. SAML identity cache
+[ ] shared memory
 [ ] self._
+[ ] restart of server drops sessions - do we want to preserver? prior, this was only for umc-webserver the case, which simply reconnected to umc-server if that was restarted.
