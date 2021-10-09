@@ -7,6 +7,7 @@ Wants=slapd.service
 Type=exec
 KillMode=control-group
 UMask=0077
+LimitNOFILE=64512
 ExecStart=/usr/sbin/univention-management-console-server
 ExecStop=/bin/kill $MAINPID
 ExecReload=/bin/kill -SIGUSR1 $MAINPID
