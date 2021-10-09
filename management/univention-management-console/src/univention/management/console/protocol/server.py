@@ -41,7 +41,6 @@ import zlib
 import base64
 import signal
 import logging
-import resource
 import tempfile
 import traceback
 import threading
@@ -836,14 +835,11 @@ class Server(object):
 		self.options = self.parser.parse_args()
 		self._child_number = None
 
-		# cleanup environment
-		os.environ.clear()
-		os.environ['PATH'] = '/bin:/sbin:/usr/bin:/usr/sbin'
+		# TODO? not really
+		# os.environ['LANG'] = locale.normalize(self.options.language)
 
 		# init logging
 		log_init(self.options.log_file, self.options.debug, self.options.processes > 1)
-
-		os.umask(0o077)
 
 	def signal_handler_hup(self, signo, frame):
 		"""Handler for the reload action"""
@@ -873,12 +869,6 @@ class Server(object):
 	def run(self):
 		signal.signal(signal.SIGHUP, self.signal_handler_hup)
 		signal.signal(signal.SIGUSR1, self.signal_handler_reload)
-
-		try:
-			fd_limit = get_int('umc/http/max-open-file-descriptors', 65535)
-			resource.setrlimit(resource.RLIMIT_NOFILE, (fd_limit, fd_limit))
-		except (ValueError, resource.error) as exc:
-			CORE.error('Could not raise NOFILE resource limits: %s' % (exc,))
 
 		sockets = bind_sockets(get_int('umc/http/port', 8090), ucr.get('umc/http/interface', '127.0.0.1'), backlog=get_int('umc/http/requestqueuesize', 100), reuse_port=True)
 		if self.options.processes != 1:
