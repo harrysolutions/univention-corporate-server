@@ -1272,7 +1272,7 @@ class Meta(Resource):
 	def get(self):
 		def _get_ucs_version():
 			try:
-				return '{version/version}-{version/patchlevel} errata{version/erratalevel} ({version/releasename})'.format(**ucr)
+				return '{version/version}-{version/patchlevel} errata{version/erratalevel}'.format(**ucr)
 			except KeyError:
 				pass
 
