@@ -48,6 +48,7 @@ import uuid
 import hashlib
 #import binascii
 import datetime
+import functools
 
 import six
 from ldap.filter import filter_format
@@ -149,13 +150,16 @@ class ModuleProcess(object):
 		CORE.process('running: %s' % ' '.join(pipes.quote(x) for x in args))
 		self.__process = tornado.process.Subprocess(args)  # , stderr=tornado.process.Subprocess.STREAM)
 		# self.__process.initialize()
-		self.__process.set_exit_callback(self._died)
+		self.set_exit_callback(self._died)  # default
 		self._client = tornado.httpclient.AsyncHTTPClient()
 
 		self._inactivity_timer = None
 		self._inactivity_counter = 0
 		self._connect_timer = None
 		self.__killtimer = None
+
+	def set_exit_callback(self, callback):
+		self.__process.set_exit_callback(callback)
 
 	@tornado.gen.coroutine
 	def connect(self, connect_retries=0):
@@ -1128,6 +1132,7 @@ class Processes(object):
 				}.get(exc.errno, _('An unknown operating system error occurred (%s).') % (exc,))
 				raise ServiceUnavailable(message)
 			self.__processes[module_name] = mod_proc
+			mod_proc.set_exit_callback(functools.partial(self.process_exited, module_name))
 
 		return self.__processes[module_name]
 
@@ -1135,6 +1140,11 @@ class Processes(object):
 		proc = self.__processes.pop(module_name, None)
 		if proc:
 			proc.stop()
+
+	def process_exited(self, module_name, exit_code):
+		proc = self.__processes.pop(module_name, None)
+		if proc:
+			proc._died(exit_code)
 
 	def has_active_module_processes(self):
 		return self.__processes
