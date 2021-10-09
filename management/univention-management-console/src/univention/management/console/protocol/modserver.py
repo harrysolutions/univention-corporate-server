@@ -138,10 +138,10 @@ class ModuleServer(object):
 		try:
 			return self.__reply(response)
 
-			async def reply():
-				self.__reply(response)
-			io_loop = tornado.ioloop.IOLoop.current()
-			io_loop.run_sync(reply)
+#			async def reply():
+#				self.__reply(response)
+#			io_loop = tornado.ioloop.IOLoop.current()
+#			io_loop.run_sync(reply)
 ##			io_loop.add_callback(self.__reply, response)
 #			self.__reply(response)
 		except Exception:
