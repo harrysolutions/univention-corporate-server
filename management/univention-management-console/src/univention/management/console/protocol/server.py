@@ -49,6 +49,7 @@ from six.moves.urllib_parse import urlparse, urlunsplit
 from six.moves.http_client import REQUEST_ENTITY_TOO_LARGE, LENGTH_REQUIRED, NOT_FOUND, BAD_REQUEST, UNAUTHORIZED, SERVICE_UNAVAILABLE
 
 import six
+import setproctitle
 from ipaddress import ip_address
 from tornado.web import Application as TApplication, HTTPError
 from tornado.httpserver import HTTPServer
@@ -314,7 +315,7 @@ class Application(TApplication):
 			(r'/upload/(.+)', Command),
 			(r'/command/(.+)', Command),
 			(r'/get/session-info', SessionInfo),
-			(r'/get/ip-address', GetIPAdress),
+			(r'/get/ipaddress', GetIPAdress),
 			(r'/get/ucr', UCR),
 			(r'/get/meta', Meta),
 			(r'/get/info', Info),
@@ -633,15 +634,15 @@ class SamlACS(SAMLBase):
 			binding = BINDING_HTTP_POST
 			args = self.request.body_arguments
 
-		relay_state = args.get('RelayState', [''])[0]
+		relay_state = args.get('RelayState', [b''])[0].decode('UTF-8')
 		try:
-			message = args['SAMLResponse'][0]
+			message = args['SAMLResponse'][0].decode('UTF-8')
 		except KeyError:
 			try:
-				message = args['SAMLRequest'][0]
+				message = args['SAMLRequest'][0].decode('UTF-8')
 			except KeyError:
 				try:
-					message = args['SAMLart'][0]
+					message = args['SAMLart'][0].decode('UTF-8')
 				except KeyError:
 					return None, None, None
 				message = self.sp.artifact2message(message, 'spsso')
@@ -867,6 +868,7 @@ class Server(object):
 				CORE.process('Failed sending signal %d to process %d: %s' % (signal, pid, exc))
 
 	def run(self):
+		setproctitle.setproctitle('%s # /usr/sbin/univention-management-console-server' % (setproctitle.getproctitle(),))
 		signal.signal(signal.SIGHUP, self.signal_handler_hup)
 		signal.signal(signal.SIGUSR1, self.signal_handler_reload)
 

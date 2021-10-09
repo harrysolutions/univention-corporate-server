@@ -665,6 +665,9 @@ class Resource(RequestHandler):
 			expires = (datetime.datetime.now() + datetime.timedelta(days=5 * 365))
 		for name, value in cookies:
 			name = self.suffixed_cookie_name(name)
+			if value is None:  # session.user.username might be None for unauthorized users
+				self.clear_cookie(name, path='/univention/')
+				continue
 			self.set_cookie(name, value, expires=expires, path='/univention/', secure=self.request.protocol == 'https' and ucr.is_true('umc/http/enforce-secure-cookie'), version=1)
 
 	def get_cookie(self, name):
