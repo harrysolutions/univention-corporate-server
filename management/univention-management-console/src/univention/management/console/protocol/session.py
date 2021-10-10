@@ -516,7 +516,7 @@ class Resource(RequestHandler):
 		self.finish(codec(formatter(response, wrap)))
 
 	def get_json(self, result, wrap=True):
-		message = self._headers.get('X-UMC-Message')
+		message = json.loads(self._headers.get('X-UMC-Message', 'null'))
 		response = {'status': self.get_status()}  # TODO: get rid of this
 		if message:
 			response['message'] = message
@@ -760,7 +760,7 @@ class Auth(Resource):
 		Session.put(sessionid, session)
 		self.set_status(result.status)
 		if result.message:
-			self.set_header('X-UMC-Message', result.message)
+			self.set_header('X-UMC-Message', json.dumps(result.message))
 		self.content_negotiation(result.result)
 
 	get = post
@@ -1407,7 +1407,7 @@ class SetPassword(Resource):
 			raise UMC_HTTPError(400, str(exc), {'new_password': '%s' % (exc,)})  # 422
 		else:
 			CORE.info('Successfully changed password')
-			self.set_header('X-UMC-Message', self._('Password successfully changed.'))
+			self.set_header('X-UMC-Message', json.dumps(self._('Password successfully changed.')))
 			self.content_negotiation(None)
 
 			# FIXME:

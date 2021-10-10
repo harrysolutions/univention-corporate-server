@@ -173,7 +173,7 @@ class ModuleServer(object):
 		body = response.body
 		if response.mimetype == 'application/json':
 			if response.message:
-				request.set_header('X-UMC-Message', response.message)
+				request.set_header('X-UMC-Message', json.dumps(response.message))
 			if isinstance(response.body, dict):
 				response.body.pop('options', None)
 			body = json.dumps(response.body).encode('ASCII')
