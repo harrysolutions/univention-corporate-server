@@ -402,8 +402,8 @@ class GetIPAddress(Resource):
 		addresses.discard(ip_address(u'127.0.0.1'))
 		return tuple(address.exploded for address in addresses)
 
-	def post(self, path):
-		return self.get(path)
+	def post(self):
+		return self.get()
 
 
 class CPCommand(Resource):
