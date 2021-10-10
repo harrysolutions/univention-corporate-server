@@ -359,10 +359,11 @@ class Handler(RequestHandler):
 		user_dn = self.request.headers.get('X-User-Dn')
 		auth_type = self.request.headers.get('X-UMC-AuthType')
 		mimetype = re.split('[ ;]', self.request.headers.get('Content-Type', ''))[0]
+		umcp_command = self.request.headers.get('X-UMC-Command', 'COMMAND')
 		if mimetype.startswith('application/json'):
 			mimetype = 'application/json'
 		locale = self.locale.code
-		msg = Request('COMMAND', [path], mime_type=mimetype)  # TODO: UPLOAD
+		msg = Request(umcp_command, [path], mime_type=mimetype)
 		if mimetype.startswith('application/json'):
 			msg.options = json.loads(self.request.body)
 			msg.flavor = flavor

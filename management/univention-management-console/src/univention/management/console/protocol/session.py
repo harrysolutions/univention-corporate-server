@@ -1021,7 +1021,7 @@ class Command(Resource):
 
 	@tornado.gen.coroutine
 	@allow_get_request
-	def get(self, command):
+	def get(self, umcp_command, command):
 		"""Handles a COMMAND request. The request must contain a valid
 		and known command that can be accessed by the current user. If
 		access to the command is prohibited the request is answered as a
@@ -1053,7 +1053,7 @@ class Command(Resource):
 			CORE.warn('Command %s does not exists' % (command))
 			raise Forbidden()
 
-		headers = self.get_request_header(session, methodname)
+		headers = self.get_request_header(session, methodname, umcp_command)
 
 		locale = str(Locale(self.locale.code))
 		process = session.processes.get_process(module_name, locale)
@@ -1083,7 +1083,7 @@ class Command(Resource):
 				self.write(response.body)
 			self.finish()
 
-	def get_request_header(self, session, methodname):
+	def get_request_header(self, session, methodname, umcp_command):
 		headers = dict(self.request.headers)
 		for header in ('Content-Length', 'Transfer-Encoding', 'Content-Encoding', 'Connection', 'X-Http-Reason', 'Range', 'Trailer', 'Server', 'Set-Cookie'):
 			headers.pop(header, None)
@@ -1092,6 +1092,7 @@ class Command(Resource):
 		# Forwarded=self.get_ip_address() ?
 		headers['Authorization'] = 'basic ' + base64.b64encode(('%s:%s' % (session.user.username, session.user.password)).encode('ISO8859-1')).decode('ASCII')
 		headers['X-UMC-Method'] = methodname
+		headers['X-UMC-Command'] = umcp_command.upper()
 		#headers['X-UMC-SAML'] = None
 		return headers
 
