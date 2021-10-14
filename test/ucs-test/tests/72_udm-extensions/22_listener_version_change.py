@@ -1,4 +1,4 @@
-#!/usr/share/ucs-test/runner python
+#!/usr/share/ucs-test/runner pytest-3
 ## desc: Change version range of an existing extension
 ## tags: [udm-ldapextensions]
 ## roles: [domaincontroller_master,domaincontroller_backup,domaincontroller_slave,memberserver]
@@ -24,9 +24,14 @@ from univention.testing.udm_extensions import (
 )
 import os
 import bz2
+import pytest
 import base64
 
-if __name__ == '__main__':
+@pytest.mark.tags('udm-ldapextensions')
+@pytest.mark.roles('domaincontroller_master', 'domaincontroller_backup', 'domaincontroller_slave', 'memberserver')
+@pytest.mark.exposure('dangerous')
+def test_22_listener_version_change(udm):
+	"""Change version range of an existing extension"""
 	ucr = ConfigRegistry()
 	ucr.load()
 
@@ -40,7 +45,6 @@ if __name__ == '__main__':
 		app_id = '%s-%s' % (random_name(), random_version())
 		dn = None
 
-		with udm_test.UCSTestUDM() as udm:
 			current_version = '%(version/version)s-%(version/patchlevel)s' % ucr
 			for (version_start, version_end, should_exist) in (
 				('1.0-0', '1.0-1', False),   # range below current version

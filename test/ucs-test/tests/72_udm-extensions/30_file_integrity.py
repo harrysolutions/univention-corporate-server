@@ -1,4 +1,4 @@
-#!/usr/share/ucs-test/runner python
+#!/usr/share/ucs-test/runner pytest-3
 ## desc: Check permissions of distributed extension file
 ## tags: [udm-ldapextensions,apptest]
 ## roles: [domaincontroller_master,domaincontroller_backup,domaincontroller_slave,memberserver]
@@ -25,9 +25,15 @@ import bz2
 import base64
 import hashlib
 import stat
+import pytest
 import grp
 
-if __name__ == '__main__':
+
+@pytest.mark.tags('udm-ldapextensions', 'apptest')
+@pytest.mark.roles('domaincontroller_master', 'domaincontroller_backup', 'domaincontroller_slave', 'memberserver')
+@pytest.mark.exposure('dangerous')
+def test_30_file_integrity(udm):
+	"""Check permissions of distributed extension file"""
 	# wait for replicate before test starts
 	wait_for_replication()
 
@@ -42,7 +48,6 @@ if __name__ == '__main__':
 		version_start = random_ucs_version(max_major=2)
 		version_end = random_ucs_version(min_major=5)
 
-		with udm_test.UCSTestUDM() as udm:
 			extension_name = get_extension_name(extension_type)
 			extension_filename = get_extension_filename(extension_type, extension_name)
 			extension_buffer = get_extension_buffer(extension_type, extension_name)

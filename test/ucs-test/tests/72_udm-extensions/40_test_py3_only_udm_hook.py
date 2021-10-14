@@ -1,4 +1,4 @@
-#!/usr/share/ucs-test/runner python
+#!/usr/share/ucs-test/runner pytest-3
 ## desc: Create Py3-only UDM hook extension object and test it via CLI
 ## tags: [udm-ldapextensions]
 ## roles: [domaincontroller_master,domaincontroller_backup,domaincontroller_slave,memberserver]
@@ -18,9 +18,14 @@ from univention.testing.udm_extensions import (
 	get_package_version
 )
 import bz2
+import pytest
 import base64
 
-if __name__ == '__main__':
+@pytest.mark.tags('udm-ldapextensions')
+@pytest.mark.roles('domaincontroller_master', 'domaincontroller_backup', 'domaincontroller_slave', 'memberserver')
+@pytest.mark.exposure('dangerous')
+def test_40_test_py3_only_udm_hook.py(udm):
+	"""Create Py3-only UDM hook extension object and test it via CLI"""
 	ucr = ConfigRegistry()
 	ucr.load()
 
@@ -129,6 +134,5 @@ if __name__ == '__main__':
 	wait_for_replication_and_postrun()
 	udm.stop_cli_server()
 
-	with udm_test.UCSTestUDM() as udm:
 		# test if user/user module is still ok after removing UDM module extension
 		udm.create_user()

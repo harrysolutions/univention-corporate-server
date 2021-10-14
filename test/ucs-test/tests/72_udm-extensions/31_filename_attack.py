@@ -1,4 +1,4 @@
-#!/usr/share/ucs-test/runner python
+#!/usr/share/ucs-test/runner pytest-3
 ## desc: Test liability to a simple filename attack
 ## tags: [udm-ldapextensions,apptest]
 ## roles: [domaincontroller_master,domaincontroller_backup,domaincontroller_slave,memberserver]
@@ -18,9 +18,14 @@ from univention.testing.udm_extensions import (
 )
 import os
 import bz2
+import pytest
 import base64
 
-if __name__ == '__main__':
+@pytest.mark.tags('udm-ldapextensions', 'apptest')
+@pytest.mark.roles('domaincontroller_master', 'domaincontroller_backup', 'domaincontroller_slave', 'memberserver')
+@pytest.mark.exposure('dangerous')
+def test_31_filename_attack.py(udm):
+	"""Test liability to a simple filename attack"""
 	# wait for replicate before test starts
 	wait_for_replication()
 
@@ -36,7 +41,6 @@ if __name__ == '__main__':
 		extension_name = get_extension_name(extension_type)
 		extension_buffer = '# THIS IS NOT GOOD!'
 
-		with udm_test.UCSTestUDM() as udm:
 
 			try:
 				dn = udm.create_object(

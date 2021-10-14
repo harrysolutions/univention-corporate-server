@@ -1,4 +1,4 @@
-#!/usr/share/ucs-test/runner python3
+#!/usr/share/ucs-test/runner pytest-3
 ## desc: Test extension update with wrong version order
 ## tags: [udm-extensions,apptest]
 ## roles: [domaincontroller_master,domaincontroller_backup,domaincontroller_slave,memberserver]
@@ -23,10 +23,15 @@ from univention.testing.udm_extensions import (
 	get_absolute_extension_filename,
 	remove_extension_by_name,
 )
+import pytest
 import random
 
 
-def test_extension(extension_type):
+@pytest.mark.parametrize('extension_type',VALID_EXTENSION_TYPES)
+@pytest.mark.tags('udm-extensions', 'apptest')
+@pytest.mark.roles('domaincontroller_master', 'domaincontroller_backup', 'domaincontroller_slave', 'memberserver')
+@pytest.mark.exposure('dangerous')
+def test_11_update_extension_via_package(extension_type):
 	package_name = get_package_name()
 	version = random_version()
 	package_version_LOW = '%s.%d' % (version, random.randint(0, 4))
@@ -87,9 +92,3 @@ def test_extension(extension_type):
 		print('Removing source package')
 		for package in packages:
 			package.remove()
-
-
-if __name__ == '__main__':
-	for extension_type in VALID_EXTENSION_TYPES:
-		print('========================= TESTING EXTENSION %s =============================' % extension_type)
-		test_extension(extension_type)

@@ -1,4 +1,4 @@
-#!/usr/share/ucs-test/runner python
+#!/usr/share/ucs-test/runner pytest-3
 ## desc: Create extensions with different version ranges
 ## tags: [udm-ldapextensions,apptest]
 ## roles: [domaincontroller_master,domaincontroller_backup,domaincontroller_slave,memberserver]
@@ -22,9 +22,14 @@ from univention.testing.udm_extensions import (
 )
 import os
 import bz2
+import pytest
 import base64
 
-if __name__ == '__main__':
+@pytest.mark.tags('udm-ldapextensions', 'apptest')
+@pytest.mark.roles('domaincontroller_master', 'domaincontroller_backup', 'domaincontroller_slave', 'memberserver')
+@pytest.mark.exposure('dangerous')
+def test_21_listener_version_start_end(udm):
+	"""Create extensions with different version ranges"""
 	ucr = ConfigRegistry()
 	ucr.load()
 
@@ -45,7 +50,6 @@ if __name__ == '__main__':
 			('%s-%s' % (ucr.get('version/version'), ucr.get('version/patchlevel')), '9.9-9', True)):  # lower limit of range is current version
 
 			print('=== Testing range from %s to %s with expected result exists=%s ===' % (version_start, version_end, should_exist))
-			with udm_test.UCSTestUDM() as udm:
 				extension_name = get_extension_name(extension_type)
 				extension_filename = get_extension_filename(extension_type, extension_name)
 				extension_buffer = get_extension_buffer(extension_type, extension_name)

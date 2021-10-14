@@ -1,4 +1,4 @@
-#!/usr/share/ucs-test/runner python
+#!/usr/share/ucs-test/runner pytest-3
 ## desc: Rename UDM extension object
 ## tags: [udm-ldapextensions,apptest]
 ## roles: [domaincontroller_master,domaincontroller_backup,domaincontroller_slave,memberserver]
@@ -24,13 +24,17 @@ from univention.testing.udm_extensions import (
 )
 import os
 import bz2
+import pytest
 import base64
 
-if __name__ == '__main__':
+@pytest.mark.tags('udm-ldapextensions', 'apptest')
+@pytest.mark.roles('domaincontroller_master', 'domaincontroller_backup', 'domaincontroller_slave', 'memberserver')
+@pytest.mark.exposure('dangerous')
+def test_23_rename_object(udm):
+	"""Rename UDM extension object"""
 	ucr = ConfigRegistry()
 	ucr.load()
 
-	with udm_test.UCSTestUDM() as udm:
 		for extension_type in VALID_EXTENSION_TYPES:
 			print('========================= TESTING EXTENSION %s =============================' % extension_type)
 			extension_name = get_extension_name(extension_type)
