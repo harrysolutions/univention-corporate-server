@@ -166,9 +166,8 @@ class ModuleServer(object):
 		status = response.status or 200  # status is not set if not json
 		request.set_status(status)
 		# set reason
-		if 200 <= status < 300:
-			request.set_header('Content-Type', response.mimetype)
-		elif 300 <= status < 400:
+		request.set_header('Content-Type', response.mimetype)
+		if 300 <= status < 400:
 			request.set_header('Location', response.headers.get('Location', ''))
 		body = response.body
 		if response.mimetype == 'application/json':
