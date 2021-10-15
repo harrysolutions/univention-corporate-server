@@ -58,7 +58,7 @@ if __name__ == '__main__':
 	parser.add_argument('-s', '--socket', action='store', dest='socket', help='defines the socket to bind to')
 	parser.add_argument('-l', '--language', action='store', dest='language', default='C', help='defines the language to use')
 	parser.add_argument('-m', '--module', action='store', dest='module', help='set the UMC daemon module to load')
-	parser.add_argument('-n', '--notifier', action='store', dest='notifier', default='generic', help='defines the notifier implementation to use')
+	parser.add_argument('-n', '--notifier', action='store', dest='notifier', default='tornado', help='defines the notifier implementation to use')
 
 	default_debug = MODULE_DEBUG_LEVEL
 	parser.add_argument('-d', '--debug', action='store', type=int, dest='debug', default=default_debug, help='if given then debugging is activated and set to the specified level [default: %(default)s]')
@@ -75,7 +75,9 @@ if __name__ == '__main__':
 		daemon.open()
 
 	# MUST be called after initializing the daemon
-	if options.notifier.lower() == 'generic':
+	if options.notifier.lower() == 'tornado':
+		notifier.init(notifier.TORNADO)
+	elif options.notifier.lower() == 'generic':
 		notifier.init(notifier.GENERIC)
 	elif options.notifier.lower() == 'qt':
 		import PyQt4.Qt as qt
