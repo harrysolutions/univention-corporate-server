@@ -7,6 +7,11 @@
 ##   - univention-directory-manager-tools
 
 from __future__ import print_function
+import bz2
+import base64
+
+import pytest
+
 import univention.testing.udm as udm_test
 from univention.config_registry import ConfigRegistry
 from univention.testing.utils import verify_ldap_object
@@ -19,19 +24,14 @@ from univention.testing.udm_extensions import (
 	get_extension_buffer,
 	VALID_EXTENSION_TYPES,
 )
-import bz2
-import pytest
-import base64
 
-@pytest.mark.tags('udm-ldapextensions', 'apptest')
-@pytest.mark.roles('domaincontroller_master', 'domaincontroller_backup', 'domaincontroller_slave', 'memberserver')
-@pytest.mark.exposure('dangerous')
-def test_20_create_via_udm_cli(udm):
-	"""Create full UDM extension objects via CLI"""
-	ucr = ConfigRegistry()
-	ucr.load()
-
-	for extension_type in VALID_EXTENSION_TYPES:
+class Test_UDMExtension(object):
+	@pytest.mark.tags('udm-ldapextensions', 'apptest')
+	@pytest.mark.roles('domaincontroller_master', 'domaincontroller_backup', 'domaincontroller_slave', 'memberserver')
+	@pytest.mark.exposure('dangerous')
+	@pytest.mark.parametrize('extension_type',VALID_EXTENSION_TYPES)
+	def test_20_create_via_udm_cli(self, udm,extension_type):
+		"""Create full UDM extension objects via CLI"""
 		print('========================= TESTING EXTENSION %s =============================' % extension_type)
 		for active in ['TRUE', 'FALSE']:
 			extension_name = get_extension_name(extension_type)
