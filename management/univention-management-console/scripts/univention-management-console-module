@@ -58,7 +58,7 @@ if __name__ == '__main__':
 	parser.add_argument('-s', '--socket', help='defines the socket to bind to')
 	parser.add_argument('-l', '--language', default='C', help='defines the language to use')
 	parser.add_argument('-m', '--module', help='set the UMC daemon module to load')
-	parser.add_argument('-n', '--notifier', default='tornado', help='defines the notifier implementation to use')
+	parser.add_argument('-n', '--notifier', default='tornado', choices={'tornado', 'generic', 'qt'}, help='defines the notifier implementation to use')
 
 	default_debug = MODULE_DEBUG_LEVEL
 	parser.add_argument('-d', '--debug', type=int, default=default_debug, help='if given then debugging is activated and set to the specified level [default: %(default)s]')
