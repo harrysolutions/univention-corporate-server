@@ -44,6 +44,7 @@ import logging
 import tempfile
 import traceback
 import threading
+import multiprocessing
 from argparse import ArgumentParser
 from six.moves.urllib_parse import urlparse, urlunsplit
 from six.moves.http_client import REQUEST_ENTITY_TOO_LARGE, LENGTH_REQUIRED, NOT_FOUND, BAD_REQUEST, UNAUTHORIZED, SERVICE_UNAVAILABLE
@@ -835,6 +836,7 @@ class Server(object):
 		)
 		self.options = self.parser.parse_args()
 		self._child_number = None
+		self._children = {}
 
 		# TODO? not really
 		# os.environ['LANG'] = locale.normalize(self.options.language)
@@ -874,8 +876,16 @@ class Server(object):
 
 		sockets = bind_sockets(get_int('umc/http/port', 8090), ucr.get('umc/http/interface', '127.0.0.1'), backlog=get_int('umc/http/requestqueuesize', 100), reuse_port=True)
 		if self.options.processes != 1:
+			self._children = multiprocessing.Manager().dict()
 			CORE.process('Starting with %r processes' % (self.options.processes,))
-			self._child_number = tornado.process.fork_processes(self.options.processes, 0)
+			try:
+				self._child_number = tornado.process.fork_processes(self.options.processes, 0)
+			except RuntimeError as exc:
+				CORE.warn('Child process died: %s' % (exc,))
+				os.kill(os.getpid(), signal.SIGTERM)
+				raise SystemExit(str(exc))
+			if self._child_number is not None:
+				self._children[self._child_number] = os.getpid()
 
 		application = Application(serve_traceback=ucr.is_true('umc/http/show_tracebacks', True))
 		server = HTTPServer(
