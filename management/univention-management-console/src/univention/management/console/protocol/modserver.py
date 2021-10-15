@@ -322,11 +322,13 @@ class ModuleServer(object):
 				io_loop.add_future(future, lambda f: self.announce())
 		notifier.threads.Simple = Simple
 
-		def loop():
-			while self.running:
-				notifier.step()
-		self.nf_thread = threading.Thread(target=loop, name='notifier')
-		self.nf_thread.start()
+		# we don't need to start a second loop if we use the tornado main loop
+		if notifier.loop is not getattr(getattr(notifier, 'nf_tornado', None), 'loop', None):
+			def loop():
+				while self.running:
+					notifier.step()
+			self.nf_thread = threading.Thread(target=loop, name='notifier')
+			self.nf_thread.start()
 
 		return self
 
