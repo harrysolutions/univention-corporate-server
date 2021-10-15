@@ -27,7 +27,7 @@ class Test_UDMExtension(object):
 	@pytest.mark.tags('udm-ldapextensions', 'apptest')
 	@pytest.mark.roles('domaincontroller_master', 'domaincontroller_backup', 'domaincontroller_slave', 'memberserver')
 	@pytest.mark.exposure('dangerous')
-	def remove_py2_only_udm_module(self, udm):
+	def remove_py2_only_udm_module(self, udm, ucr):
 		"""Create Py2-only UDM module extension object, expect it to get removed"""
 		extension_type = 'module'
 		extension_name = get_extension_name(extension_type)

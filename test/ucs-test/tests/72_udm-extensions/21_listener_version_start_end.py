@@ -31,7 +31,7 @@ class Test_UDMExtension(object):
 	@pytest.mark.tags('udm-ldapextensions', 'apptest')
 	@pytest.mark.roles('domaincontroller_master', 'domaincontroller_backup', 'domaincontroller_slave', 'memberserver')
 	@pytest.mark.exposure('dangerous')
-	def listener_version_start_end(self, udm):
+	def listener_version_start_end(self, udm, ucr):
 		"""Create extensions with different version ranges"""
 		# wait for replicate before test starts
 		wait_for_replication()

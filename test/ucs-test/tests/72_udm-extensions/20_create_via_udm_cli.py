@@ -30,7 +30,7 @@ class Test_UDMExtension(object):
 	@pytest.mark.roles('domaincontroller_master', 'domaincontroller_backup', 'domaincontroller_slave', 'memberserver')
 	@pytest.mark.exposure('dangerous')
 	@pytest.mark.parametrize('extension_type',VALID_EXTENSION_TYPES)
-	def test_20_create_via_udm_cli(self, udm,extension_type):
+	def test_20_create_via_udm_cli(self, udm,extension_type, ucr):
 		"""Create full UDM extension objects via CLI"""
 		print('========================= TESTING EXTENSION %s =============================' % extension_type)
 		for active in ['TRUE', 'FALSE']:

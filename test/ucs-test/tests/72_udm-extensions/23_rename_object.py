@@ -34,7 +34,7 @@ class Test_UDMExtension(object):
 	@pytest.mark.roles('domaincontroller_master', 'domaincontroller_backup', 'domaincontroller_slave', 'memberserver')
 	@pytest.mark.exposure('dangerous')
 	@pytest.mark.parametrize('extension_type',VALID_EXTENSION_TYPES)
-	def rename_object(self, udm,extension_type):
+	def rename_object(self, udm,extension_type, ucr):
 		"""Rename UDM extension object"""
 		print('========================= TESTING EXTENSION %s =============================' % extension_type)
 		extension_name = get_extension_name(extension_type)

@@ -28,7 +28,7 @@ class Test_UDMExtension(object):
 	@pytest.mark.tags('udm-ldapextensions')
 	@pytest.mark.roles('domaincontroller_master', 'domaincontroller_backup', 'domaincontroller_slave', 'memberserver')
 	@pytest.mark.exposure('dangerous')
-	def keep_but_dont_activate_py2_only_udm_hook(self, udm):
+	def keep_but_dont_activate_py2_only_udm_hook(self, udm, ucr):
 		"""Create Py2-only UDM hook extension object, expect it to be present in LDAP but not committed locally"""
 		extension_type = 'hook'
 		extension_name = get_extension_name(extension_type)

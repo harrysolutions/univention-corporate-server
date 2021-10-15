@@ -33,7 +33,7 @@ class Test_UDMExtension(object):
 	@pytest.mark.tags('udm-ldapextensions')
 	@pytest.mark.roles('domaincontroller_master', 'domaincontroller_backup', 'domaincontroller_slave', 'memberserver')
 	@pytest.mark.exposure('dangerous')
-	def listener_version_change(self, udm):
+	def listener_version_change(self, udm, ucr):
 		"""Change version range of an existing extension"""
 		# wait for replicate before test starts
 		wait_for_replication()

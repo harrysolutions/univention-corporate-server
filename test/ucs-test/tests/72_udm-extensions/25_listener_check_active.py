@@ -31,7 +31,7 @@ class Test_UDMExtension(object):
 	@pytest.mark.roles('domaincontroller_master', 'domaincontroller_backup', 'domaincontroller_slave', 'memberserver')
 	@pytest.mark.exposure('dangerous')
 	@pytest.mark.parametrize('extension_type',VALID_EXTENSION_TYPES)
-	def listener_check_active(self, udm,extension_type):
+	def listener_check_active(self, udm,extension_type, ucr):
 		"""Change active flag to TRUE by domaincontroller master"""
 		print('========================= TESTING EXTENSION %s =============================' % extension_type)
 		extension_name = get_extension_name(extension_type)

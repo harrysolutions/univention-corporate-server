@@ -27,7 +27,7 @@ class Test_UDMExtension(object):
 	@pytest.mark.tags('udm-ldapextensions')
 	@pytest.mark.roles('domaincontroller_master', 'domaincontroller_backup', 'domaincontroller_slave', 'memberserver')
 	@pytest.mark.exposure('dangerous')
-	def test_py2_and_3_udm_hook(self, udm):
+	def test_py2_and_3_udm_hook(self, udm, ucr):
 		"""Create UDM hook extension object and test it via CLI"""
 		with udm_test.UCSTestUDM() as udm:
 			extension_type = 'hook'
@@ -135,5 +135,6 @@ class Test_UDMExtension(object):
 		wait_for_replication_and_postrun()
 		udm.stop_cli_server()
 
-		# test if user/user module is still ok after removing UDM module extension
-		udm.create_user()
+		with udm_test.UCSTestUDM() as udm:
+			# test if user/user module is still ok after removing UDM module extension
+			udm.create_user()
