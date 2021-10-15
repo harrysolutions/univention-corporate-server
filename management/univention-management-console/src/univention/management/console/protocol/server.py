@@ -855,7 +855,7 @@ class Server(object):
 		self._inform_childs(signal)
 
 	def _inform_childs(self, signal):
-		if self.server._child_number is not None:
+		if self._child_number is not None:
 			return  # we are the child process
 		try:
 			children = list(self._children.items())
