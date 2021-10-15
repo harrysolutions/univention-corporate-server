@@ -34,7 +34,7 @@ class Test_UDMExtension(object):
 	@pytest.mark.tags('udm-extensions', 'apptest')
 	@pytest.mark.roles('domaincontroller_master', 'domaincontroller_backup', 'domaincontroller_slave', 'memberserver')
 	@pytest.mark.exposure('dangerous')
-	def update_extension_via_package(self, extension_type, ucr):
+	def update_extension_via_package(self, extension_type):
 		package_name = get_package_name()
 		version = random_version()
 		package_version_LOW = '%s.%d' % (version, random.randint(0, 4))
