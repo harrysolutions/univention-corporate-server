@@ -1078,6 +1078,13 @@ class Command(Resource):
 				if header.title() not in ('Content-Length', 'Transfer-Encoding', 'Content-Encoding', 'Connection', 'X-Http-Reason', 'Range', 'Trailer', 'Server', 'Set-Cookie'):
 					self.add_header(header, v)
 
+			if response.code >= 400 and response.headers.get('Content-Type', '').startswith('application/json'):
+				body = json.loads(response.body)
+				message = json.loads(response.headers.get('X-UMC-Message', 'null'))
+				exc = UMC_HTTPError(response.code, message=message, body=body.get('result'), error=body.get('error'), reason=response.reason)
+				self.write_error(response.code, (UMC_HTTPError, exc, None))
+				return
+
 			if response.body:
 				self.set_header('Content-Length', str(len(response.body)))
 				self.write(response.body)

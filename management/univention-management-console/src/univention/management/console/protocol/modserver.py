@@ -164,7 +164,7 @@ class ModuleServer(object):
 			response.body.pop('headers', None)
 			response.body.pop('cookies', None)
 		status = response.status or 200  # status is not set if not json
-		request.set_status(status)
+		request.set_status(status, response.reason)
 		# set reason
 		request.set_header('Content-Type', response.mimetype)
 		if 300 <= status < 400:
@@ -175,6 +175,7 @@ class ModuleServer(object):
 				request.set_header('X-UMC-Message', json.dumps(response.message))
 			if isinstance(response.body, dict):
 				response.body.pop('options', None)
+				response.body.pop('message', None)
 			body = json.dumps(response.body).encode('ASCII')
 		request.finish(body)
 
@@ -322,6 +323,7 @@ class ModuleServer(object):
 		notifier.threads.Simple = Simple
 
 		# we don't need to start a second loop if we use the tornado main loop
+		self.nf_thread = None
 		if notifier.loop is not getattr(getattr(notifier, 'nf_tornado', None), 'loop', None):
 			def loop():
 				while self.running:
@@ -334,7 +336,8 @@ class ModuleServer(object):
 	def __exit__(self, etype, exc, etraceback):
 		self.running = False
 		self.ioloop.stop()
-		self.nf_thread.join()
+		if self.nf_thread:
+			self.nf_thread.join()
 
 	def loop(self):
 		self.ioloop = tornado.ioloop.IOLoop.current()
