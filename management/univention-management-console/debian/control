@@ -117,6 +117,7 @@ Depends:
  python3-openssl,
  python3-pam,
  python3-polib,
+ python3-pycurl,
  python3-setproctitle,
  python3-six,
  python3-tornado,
