@@ -42,7 +42,7 @@ def main():
 		try:
 			SamlSession.login_with_new_session_at_IdP()
 		except samltest.SamlError as exc:
-			expected_error = "The SAML authentication failed. This might be a temporary problem. Please login again.\\nFurther information can be found in the following logfiles:\\n* /var/log/univention/management-console-web-server.log\\n* /var/log/univention/management-console-server.log\\n"
+			expected_error = "There is a configuration error in the service provider: No identity provider are set up for use."
 			if expected_error not in exc.message:
 				raise Exception({'expected': expected_error, 'got': exc.message})
 	SamlSession.logout_at_IdP()
