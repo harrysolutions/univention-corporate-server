@@ -445,54 +445,54 @@ class CPCommand(Resource):
 		req.body = self._get_upload_arguments(req)
 		return req
 
-	def _is_file_upload(self):
-		return self.request.headers.get('Content-Type', '').startswith('multipart/form-data')
-
-	def _get_upload_arguments(self, req):
-		options = []
-		body = {}
-
-		# check if enough free space is available
-		min_size = get_int('umc/server/upload/min_free_space', 51200)  # kilobyte
-		s = os.statvfs(TEMPUPLOADDIR)
-		free_disk_space = s.f_bavail * s.f_frsize // 1024  # kilobyte
-		if free_disk_space < min_size:
-			CORE.error('there is not enough free space to upload files')
-			raise HTTPError(BAD_REQUEST, 'There is not enough free space on disk')
-
-		for name, field in self.request.files.items():
-			for part in field:
-				tmpfile = _upload_manager.add(req.id, part)
-				options.append(self._sanitize_file(tmpfile, name, part))
-
-		for name in self.request.body_arguments:
-			value = self.get_body_arguments(name)
-			if len(value) == 1:
-				value = value[0]
-			body[name] = value
-
-		body['options'] = options
-		return body
-
-	def _sanitize_file(self, tmpfile, name, store):
-		# check if filesize is allowed
-		st = os.stat(tmpfile)
-		max_size = get_int('umc/server/upload/max', 64) * 1024
-		if st.st_size > max_size:
-			CORE.warn('file of size %d could not be uploaded' % (st.st_size))
-			raise HTTPError(BAD_REQUEST, 'The size of the uploaded file is too large')
-
-		filename = store['filename']
-		# some security
-		for c in '<>/':
-			filename = filename.replace(c, '_')
-
-		return {
-			'filename': filename,
-			'name': name,
-			'tmpfile': tmpfile,
-			'content_type': store['content_type'],
-		}
+#	def _is_file_upload(self):
+#		return self.request.headers.get('Content-Type', '').startswith('multipart/form-data')
+#
+#	def _get_upload_arguments(self, req):
+#		options = []
+#		body = {}
+#
+#		# check if enough free space is available
+#		min_size = get_int('umc/server/upload/min_free_space', 51200)  # kilobyte
+#		s = os.statvfs(TEMPUPLOADDIR)
+#		free_disk_space = s.f_bavail * s.f_frsize // 1024  # kilobyte
+#		if free_disk_space < min_size:
+#			CORE.error('there is not enough free space to upload files')
+#			raise HTTPError(BAD_REQUEST, 'There is not enough free space on disk')
+#
+#		for name, field in self.request.files.items():
+#			for part in field:
+#				tmpfile = _upload_manager.add(req.id, part)
+#				options.append(self._sanitize_file(tmpfile, name, part))
+#
+#		for name in self.request.body_arguments:
+#			value = self.get_body_arguments(name)
+#			if len(value) == 1:
+#				value = value[0]
+#			body[name] = value
+#
+#		body['options'] = options
+#		return body
+#
+#	def _sanitize_file(self, tmpfile, name, store):
+#		# check if filesize is allowed
+#		st = os.stat(tmpfile)
+#		max_size = get_int('umc/server/upload/max', 64) * 1024
+#		if st.st_size > max_size:
+#			CORE.warn('file of size %d could not be uploaded' % (st.st_size))
+#			raise HTTPError(BAD_REQUEST, 'The size of the uploaded file is too large')
+#
+#		filename = store['filename']
+#		# some security
+#		for c in '<>/':
+#			filename = filename.replace(c, '_')
+#
+#		return {
+#			'filename': filename,
+#			'name': name,
+#			'tmpfile': tmpfile,
+#			'content_type': store['content_type'],
+#		}
 
 
 #class AuthSSO(Resource):
