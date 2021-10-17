@@ -1094,7 +1094,8 @@ class Command(Resource):
 		headers = dict(self.request.headers)
 		for header in ('Content-Length', 'Transfer-Encoding', 'Content-Encoding', 'Connection', 'X-Http-Reason', 'Range', 'Trailer', 'Server', 'Set-Cookie'):
 			headers.pop(header, None)
-		headers['X-User-Dn'] = session.user.user_dn
+		headers['Cookie'] = '; '.join([m.OutputString(attrs=[]) for name, m in self.cookies.items() if not name.startswith('UMCUsername')])
+		headers['X-User-Dn'] = json.dumps(session.user.user_dn)
 		#headers['X-UMC-Flavor'] = None
 		# Forwarded=self.get_ip_address() ?
 		headers['Authorization'] = 'basic ' + base64.b64encode(('%s:%s' % (session.user.username, session.user.password)).encode('ISO8859-1')).decode('ASCII')

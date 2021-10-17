@@ -360,7 +360,7 @@ class Handler(RequestHandler):
 		method = self.request.headers['X-UMC-Method']
 		flavor = self.request.headers.get('X-UMC-Flavor')
 		username, password = self.parse_authorization()
-		user_dn = self.request.headers.get('X-User-Dn')
+		user_dn = json.loads(self.request.headers.get('X-User-Dn', 'null'))
 		auth_type = self.request.headers.get('X-UMC-AuthType')
 		mimetype = re.split('[ ;]', self.request.headers.get('Content-Type', ''))[0]
 		umcp_command = self.request.headers.get('X-UMC-Command', 'COMMAND')
