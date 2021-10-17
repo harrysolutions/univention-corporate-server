@@ -312,7 +312,7 @@ class Application(TApplication):
 		super(Application, self).__init__([
 			#(r'/auth/sso', AuthSSO),
 			(r'/auth/?', Auth),
-			(r'/upload/', Upload),
+			(r'/upload/?', Upload),
 			(r'/(upload)/(.+)', Command),
 			(r'/(command)/(.+)', Command),
 			(r'/get/session-info', SessionInfo),
