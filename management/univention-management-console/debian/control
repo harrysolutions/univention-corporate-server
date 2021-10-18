@@ -84,6 +84,7 @@ Depends:
  python-openssl,
  python-pam,
  python-polib,
+ python-pycurl,
  python-setproctitle,
  python-six,
  python-tornado,
