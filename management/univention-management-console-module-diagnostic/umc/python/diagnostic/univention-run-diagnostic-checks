@@ -45,19 +45,15 @@ class CLIClient(object):
 
 	@classmethod
 	def main(cls):
-		parser = argparse.ArgumentParser(description='Executes the diagnostic module checks', add_help=False)
-		parser.add_argument('-h', '--help', action='store_true', help='show this help message and exit')
-		parser.add_argument("--bindpwdfile", help='Path to a file that contains your password')
-		parser.add_argument("--username", help='Domain Admin username for Authentication')
-		args = parser.parse_known_args()[0]
+		usage = '%(prog)s [-h] [--bindpwdfile BINDPWDFILE] [--username USERNAME] [-l | -t T [T ...] -s S [S ...]]'
+		parser = argparse.ArgumentParser(description='Executes the diagnostic module checks', usage=usage)
+		parser.add_argument('--bindpwdfile', help='Path to a file that contains your password')
+		parser.add_argument('--username', help='Domain Admin username for Authentication')
+		parser.add_argument('-l', '--list', action='store_true', help='List all available tests and exit')
+		parser.add_argument('-t', '--test', default=['all'], nargs='*', dest='tests', help='List of tests to run. Default is: all')
+		parser.add_argument('-s', '--skip', default=[], nargs='*', dest='skip_tests', help='List of tests to skip. Default is: []')
 
-		list_choices = ['all', 'list']
-		parser.add_argument(
-			"-t", dest='tests', choices=list_choices, nargs='+',
-			default='all', help='''Choose tests to run by using `-t
-			<testname>`, where <testname> can be any of the tests
-			from `-t list` or run `-t all` to execute all
-			diagnostic checks''')
+		args = parser.parse_args()
 
 		if args.help:
 			parser.print_help()
@@ -78,9 +74,6 @@ class CLIClient(object):
 			parser.error('Login failed: %s' % (exc.message,))
 
 		plugins = [plugin['id'] for plugin in client.umc_command('diagnostic/query').result]
-		list_choices += plugins
-
-		args = parser.parse_args()
 
 		if 'list' in args.tests:
 			print("\n\t".join(['Available tests:'] + plugins))
@@ -88,6 +81,21 @@ class CLIClient(object):
 
 		if 'all' in args.tests:
 			args.tests = plugins
+		else:
+			missing_tests = set(args.tests) - set(plugins)
+			if missing_tests:
+				print('Error: following tests to perform were not found %r' % (missing_tests, ), file=sys.stderr)
+				sys.exit(1)
+
+		if args.skip_tests:
+			missing_skip_tests = set(args.skip_tests) - set(plugins)
+			if missing_skip_tests:
+				print('Error: following tests to skip were not found %r' % (missing_skip_tests,), file=sys.stderr)
+				sys.exit(1)
+
+			tests = list(set(plugins) - set(args.skip_tests))
+			tests.sort()
+			args.tests = tests
 
 		return cls(client, args).run()
 

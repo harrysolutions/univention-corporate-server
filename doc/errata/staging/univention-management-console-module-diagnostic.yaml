@@ -1,0 +1,11 @@
+product: ucs
+release: "5.0"
+version: [0]
+scope: ucs_5.0-0-errata5.0-0
+src: univention-management-console-module-diagnostic
+fix:
+desc: |
+ This update addresses the following issue:
+ * univention-run-diagnostic-checks offers to run group of test and also
+   to exclude some tests.
+bug: [53969]
