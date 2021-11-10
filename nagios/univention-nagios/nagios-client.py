@@ -35,7 +35,8 @@ from __future__ import absolute_import
 import os
 import re
 import stat
-import univention.debug
+
+import univention.debug as ud
 
 from listener import SetUID, configRegistry, run
 
@@ -59,7 +60,7 @@ def readPluginConfig():
 		# save modification time
 		__pluginconfdirstat = os.stat(__pluginconfdir)[8]
 
-		univention.debug.debug(univention.debug.LISTENER, univention.debug.INFO, 'NAGIOS-CLIENT: updating plugin config')
+		ud.debug(ud.LISTENER, ud.INFO, 'NAGIOS-CLIENT: updating plugin config')
 
 		with SetUID(0):
 			for fn in os.listdir(__pluginconfdir):
@@ -70,7 +71,7 @@ def readPluginConfig():
 					mcmdline = re.search(r'^\s+command_line\s+(.*?)\s*$', cmddef, re.MULTILINE)
 					if mcmdname and mcmdline:
 						__pluginconfig[mcmdname.group(1)] = mcmdline.group(1)
-						univention.debug.debug(univention.debug.LISTENER, univention.debug.INFO, 'NAGIOS-CLIENT: read configline for plugin %r ==> %r' % (mcmdname.group(1), mcmdline.group(1)))
+						ud.debug(ud.LISTENER, ud.INFO, 'NAGIOS-CLIENT: read configline for plugin %r ==> %r' % (mcmdname.group(1), mcmdline.group(1)))
 
 
 def replaceArguments(cmdline, args):
@@ -116,7 +117,7 @@ def writeConfig(fqdn, new):
 		fp.write('command[%s]=%s\n' % (name, cmdline.decode('UTF-8')))
 		fp.close()
 
-		univention.debug.debug(univention.debug.LISTENER, univention.debug.INFO, 'NAGIOS-CLIENT: service %s written' % name)
+		ud.debug(ud.LISTENER, ud.INFO, 'NAGIOS-CLIENT: service %s written' % name)
 
 
 def removeConfig(name):
@@ -129,15 +130,15 @@ def removeConfig(name):
 
 def handler(dn, new, old):
 	# type: (str, dict, dict) -> None
-	# univention.debug.debug(univention.debug.LISTENER, univention.debug.INFO, 'NAGIOS-CLIENT: IN dn=%r' % (dn,))
-	# univention.debug.debug(univention.debug.LISTENER, univention.debug.INFO, 'NAGIOS-CLIENT: IN old=%r' % (old,))
-	# univention.debug.debug(univention.debug.LISTENER, univention.debug.INFO, 'NAGIOS-CLIENT: IN new=%r' % (new,))
+	# ud.debug(ud.LISTENER, ud.INFO, 'NAGIOS-CLIENT: IN dn=%r' % (dn,))
+	# ud.debug(ud.LISTENER, ud.INFO, 'NAGIOS-CLIENT: IN old=%r' % (old,))
+	# ud.debug(ud.LISTENER, ud.INFO, 'NAGIOS-CLIENT: IN new=%r' % (new,))
 
 	fqdn = '%(hostname)s.%(username)s' % configRegistry
 	fqdn = fqdn.encode('UTF-8')
 
 	if old and not new:
-		univention.debug.debug(univention.debug.LISTENER, univention.debug.INFO, 'NAGIOS-CLIENT: service %r deleted' % (old['cn'][0],))
+		ud.debug(ud.LISTENER, ud.INFO, 'NAGIOS-CLIENT: service %r deleted' % (old['cn'][0],))
 		removeConfig(old['cn'][0].decode('UTF-8'))
 
 	if old and \
@@ -147,7 +148,7 @@ def handler(dn, new, old):
 		# local fqdn was in old object and
 		# local fqdn is not in new object
 		# ==> fqdn was deleted from list
-		univention.debug.debug(univention.debug.LISTENER, univention.debug.INFO, 'NAGIOS-CLIENT: host removed from service %s' % (old['cn'][0],))
+		ud.debug(ud.LISTENER, ud.INFO, 'NAGIOS-CLIENT: host removed from service %s' % (old['cn'][0],))
 		removeConfig(old['cn'][0].decode('UTF-8'))
 	elif old and \
 		old.get('univentionNagiosUseNRPE', [None])[0] == b'1' and \
@@ -157,7 +158,7 @@ def handler(dn, new, old):
 		# NRPE was enabled in old object
 		# NRPE is disabled in new object
 		# ==> remove config
-		univention.debug.debug(univention.debug.LISTENER, univention.debug.INFO, 'NAGIOS-CLIENT: nrpe disabled for service %r' % (old['cn'][0],))
+		ud.debug(ud.LISTENER, ud.INFO, 'NAGIOS-CLIENT: nrpe disabled for service %r' % (old['cn'][0],))
 		removeConfig(old['cn'][0].decode('UTF-8'))
 	else:
 		# otherwise:
@@ -165,7 +166,7 @@ def handler(dn, new, old):
 		# - this host is newly added to list or
 		# - this object is new
 		if 'univentionNagiosUseNRPE' in new and new['univentionNagiosUseNRPE'] and (new['univentionNagiosUseNRPE'][0] == b'1'):
-			univention.debug.debug(univention.debug.LISTENER, univention.debug.INFO, 'NAGIOS-CLIENT: writing service %r' % (new['cn'][0],))
+			ud.debug(ud.LISTENER, ud.INFO, 'NAGIOS-CLIENT: writing service %r' % (new['cn'][0],))
 			writeConfig(fqdn.decode('UTF-8'), new)
 
 
@@ -204,5 +205,5 @@ def postrun():
 	global __initscript
 	initscript = __initscript
 	if configRegistry.is_true("nagios/client/autostart"):
-		univention.debug.debug(univention.debug.LISTENER, univention.debug.INFO, 'NRPED: Restarting server')
+		ud.debug(ud.LISTENER, ud.INFO, 'NRPED: Restarting server')
 		run(initscript, ['nagios-nrpe-server', 'restart'], uid=0)
