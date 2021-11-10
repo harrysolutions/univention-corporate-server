@@ -1,3 +1,9 @@
+univention-nagios (13.0.2-2) unstable; urgency=medium
+
+  * Bug #53681: fix nagios configuration files
+
+ -- Florian Best <best@univention.de>  Wed, 10 Nov 2021 10:36:52 +0100
+
 univention-nagios (13.0.2-1) unstable; urgency=medium
 
   * Bug #52122: Remove univention-nagios-server
