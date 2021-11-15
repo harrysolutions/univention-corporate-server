@@ -5654,6 +5654,13 @@ class LocalizedDescription(translationTuple):
 	subsyntaxes = [(_('Language code (e.g. en_US)'), languageCode), (_('Description'), string)]
 
 
+class LocalizedKeywords(translationTuple):
+	"""
+	Syntax for translated keywords of a portal entry.
+	"""
+	subsyntaxes = [(_('Language code (e.g. en_US)'), languageCode), (_('Keywords'), string)]
+
+
 class LocalizedAnonymousEmpty(translationTuple):
 	"""
 	Syntax for a translated description of a portal entry.

@@ -1799,6 +1799,9 @@ msgstr "Authentisierung fehlgeschlagen"
 msgid "Moving children is not supported."
 msgstr "Das Verschieben von Kindsknoten wird nicht unterstützt."
 
+msgid "Keywords"
+msgstr "Schlüsselwörter"
+
 #~ msgid "All Clients"
 #~ msgstr "Von jedem Client"
 
