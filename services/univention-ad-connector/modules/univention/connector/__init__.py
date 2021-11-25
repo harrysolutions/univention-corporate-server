@@ -181,12 +181,13 @@ class configdb:
 
 	def set(self, section, option, value):
 		for i in [1, 2]:
+			cmd = "INSERT OR REPLACE INTO '%s' (key, value) VALUES (?, ?);" % (section,)
+			if section == "AD rejected":
+				# update retry_count
+				cmd = "INSERT OR REPLACE INTO '%s' (key, value, retry_count) VALUES (?, ?, COALESCE((SELECT retry_count FROM '%s' WHERE key = '%s' )+1,0));" % (section, section, option)
 			try:
 				cur = self._dbcon.cursor()
-				cur.execute("""
-		INSERT OR REPLACE INTO '%s' (key,value)
-			VALUES (  ?, ?
-		);""" % section, [option, value])
+				cur.execute(cmd, [option, value])
 				self._dbcon.commit()
 				cur.close()
 				return
@@ -247,7 +248,10 @@ class configdb:
 		for i in [1, 2]:
 			try:
 				cur = self._dbcon.cursor()
-				cur.execute("CREATE TABLE IF NOT EXISTS '%s'(Key TEXT PRIMARY KEY, Value TEXT)" % section)
+				if section == "AD rejected":
+					cur.execute("CREATE TABLE IF NOT EXISTS '%s'(Key TEXT PRIMARY KEY, Value TEXT, retry_count NUMBER DEFAULT 0)" % section)
+				else:
+					cur.execute("CREATE TABLE IF NOT EXISTS '%s'(Key TEXT PRIMARY KEY, Value TEXT)" % section)
 				self._dbcon.commit()
 				cur.close()
 				return
