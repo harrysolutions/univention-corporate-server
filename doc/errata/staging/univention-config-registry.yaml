@@ -1,0 +1,12 @@
+product: ucs
+release: "5.0"
+version: [1]
+scope: ucs_5.0-0-errata5.0-1
+src: univention-config-registry
+fix: 
+desc: |
+ This update addresses the following issue:
+ * New function get_int that that return an int if the input registry
+   key contains a value with this kind of datatype, otherwise return 
+   the input default value  
+bug: [20933]
