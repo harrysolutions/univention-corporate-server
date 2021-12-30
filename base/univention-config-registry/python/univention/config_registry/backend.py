@@ -322,13 +322,6 @@ class ReadOnlyConfigRegistry(_M, BooleanConfigRegistry):
 		# type: (str, _VT) -> Union[str, _VT]
 		pass
 
-	def get_int(self, key, default=None):
-		# type: (str, _VT) -> Union[int, _VT]
-		try:
-			return int(self[key])
-		except (KeyError, ValueError):
-			return default
-
 	def get(self, key, default=None, getscope=False):  # noqa F811
 		# type: (str, Optional[_VT], bool) -> Union[str, Tuple[int, str], _VT, None]
 		"""
@@ -348,6 +341,13 @@ class ReadOnlyConfigRegistry(_M, BooleanConfigRegistry):
 				value = self._eval_default(value)
 			return (reg, value) if getscope else value
 		return default
+
+	def get_int(self, key, default=None):
+		# type: (str, _VT) -> Union[int, _VT]
+		try:
+			return int(self[key])
+		except (KeyError, ValueError):
+			return default
 
 	@overload
 	def _merge(self):  # pragma: no cover
