@@ -1,4 +1,4 @@
-#!/usr/share/ucs-test/runner python
+#!/usr/share/ucs-test/runner pytest-3
 ## desc: Test liability to a simple filename attack
 ## tags: [udm-ldapextensions,apptest]
 ## roles: [domaincontroller_master,domaincontroller_backup,domaincontroller_slave,memberserver]
@@ -18,9 +18,14 @@ from univention.testing.udm_extensions import (
 )
 import os
 import bz2
+import pytest
 import base64
 
-if __name__ == '__main__':
+@pytest.mark.tags('udm-ldapextensions', 'apptest')
+@pytest.mark.roles('domaincontroller_master', 'domaincontroller_backup', 'domaincontroller_slave', 'memberserver')
+@pytest.mark.exposure('dangerous')
+def test_filename_attack(udm):
+	"""Test liability to a simple filename attack"""
 	# wait for replicate before test starts
 	wait_for_replication()
 
@@ -36,33 +41,32 @@ if __name__ == '__main__':
 		extension_name = get_extension_name(extension_type)
 		extension_buffer = '# THIS IS NOT GOOD!'
 
-		with udm_test.UCSTestUDM() as udm:
 
-			try:
-				dn = udm.create_object(
-					'settings/udm_%s' % extension_type,
-					name=extension_name,
-					data=base64.b64encode(bz2.compress(extension_buffer)),
-					filename='../' * 20 + 'tmp/%s' % filename,
-					packageversion=package_version,
-					package=package_name,
-					ucsversionstart=version_start,
-					ucsversionend=version_end,
-					active='FALSE'
-				)
-			except udm_test.UCSTestUDM_CreateUDMObjectFailed:
-				print('NOTICE: creating malicious UDM %s extension object failed' % extension_type)
-				continue
+		try:
+			dn = udm.create_object(
+				'settings/udm_%s' % extension_type,
+				name=extension_name,
+				data=base64.b64encode(bz2.compress(extension_buffer)),
+				filename='../' * 20 + 'tmp/%s' % filename,
+				packageversion=package_version,
+				package=package_name,
+				ucsversionstart=version_start,
+				ucsversionend=version_end,
+				active='FALSE'
+			)
+		except udm_test.UCSTestUDM_CreateUDMObjectFailed:
+			print('NOTICE: creating malicious UDM %s extension object failed' % extension_type)
+			continue
 
-			# wait for replication before local filesystem is checked
-			wait_for_replication()
+		# wait for replication before local filesystem is checked
+		wait_for_replication()
 
-			# check if registered file has been replicated to local system
-			if os.path.exists('/tmp/%s' % filename):
-				fail('ERROR: path attack possible')
+		# check if registered file has been replicated to local system
+		if os.path.exists('/tmp/%s' % filename):
+			fail('ERROR: path attack possible')
 
-			if os.path.islink('/tmp/%s' % filename):
-				fail('ERROR: path attack possible')
+		if os.path.islink('/tmp/%s' % filename):
+			fail('ERROR: path attack possible')
 
-			if os.path.isfile('/tmp/%s' % filename):
-				fail('ERROR: path attack possible')
+		if os.path.isfile('/tmp/%s' % filename):
+			fail('ERROR: path attack possible')

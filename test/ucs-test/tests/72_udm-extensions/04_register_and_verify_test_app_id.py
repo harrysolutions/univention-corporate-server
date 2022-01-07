@@ -1,4 +1,4 @@
-#!/usr/share/ucs-test/runner python
+#!/usr/share/ucs-test/runner pytest-3
 ## desc: Check setting of UNIVENTION_APP_ID for UDM extensions
 ## tags: [udm-extensions,apptest]
 ## roles: [domaincontroller_master,domaincontroller_backup,domaincontroller_slave,memberserver]
@@ -9,8 +9,8 @@
 ##   - shell-univention-lib
 
 from __future__ import print_function
-from univention.testing.debian_package import DebianPackage
-from univention.testing.utils import fail, wait_for_replication, verify_ldap_object
+from test_udm_extensions import temp_deb_pkg
+from univention.testing.utils import wait_for_replication, verify_ldap_object
 from univention.testing.strings import random_name, random_version
 from univention.testing.udm_extensions import (
 	get_package_name,
@@ -21,13 +21,18 @@ from univention.testing.udm_extensions import (
 	call_join_script,
 	get_join_script_buffer,
 	get_dn_of_extension_by_name,
-	remove_extension_by_name,
 	VALID_EXTENSION_TYPES
 )
+import pytest
 import bz2
 
 
-def test_extension(extension_type):
+@pytest.mark.tags('udm-extensions', 'apptest')
+@pytest.mark.roles('domaincontroller_master', 'domaincontroller_backup', 'domaincontroller_slave', 'memberserver')
+@pytest.mark.exposure('dangerous')
+@pytest.mark.parametrize('extension_type', VALID_EXTENSION_TYPES)
+def test_register_and_verify_test_app_id(extension_type):
+	"""Check setting of UNIVENTION_APP_ID for UDM extensions"""
 	package_name = get_package_name()
 	package_version = get_package_version()
 	extension_name = get_extension_name(extension_type)
@@ -41,8 +46,7 @@ def test_extension(extension_type):
 	)
 	extension_buffer = get_extension_buffer(extension_type, extension_name)
 
-	package = DebianPackage(name=package_name, version=package_version)
-	try:
+	with temp_deb_pkg(package_name, package_version, extension_type, extension_name) as package:
 		# create package and install it
 		package.create_join_script_from_buffer('66%s.inst' % package_name, joinscript_buffer)
 		package.create_usr_share_file_from_buffer(extension_filename, extension_buffer)
@@ -55,8 +59,7 @@ def test_extension(extension_type):
 		wait_for_replication()
 
 		dnlist = get_dn_of_extension_by_name(extension_type, extension_name)
-		if not dnlist:
-			fail('Cannot find UDM %s extension with name %s in LDAP' % (extension_type, extension_name))
+		assert dnlist, 'Cannot find UDM %s extension with name %s in LDAP' % (extension_type, extension_name)
 		verify_ldap_object(dnlist[0], {
 			'cn': [extension_name],
 			'univentionUDM%sFilename' % extension_type.capitalize(): ['%s.py' % extension_name],
@@ -66,18 +69,3 @@ def test_extension(extension_type):
 			'univentionUDM%sData' % extension_type.capitalize(): [bz2.compress(extension_buffer)],
 			'univentionAppIdentifier': [app_id],
 		})
-	finally:
-		print('Removing UDM extension from LDAP')
-		remove_extension_by_name(extension_type, extension_name, fail_on_error=False)
-
-		print('Uninstalling binary package %r' % package_name)
-		package.uninstall()
-
-		print('Removing source package')
-		package.remove()
-
-
-if __name__ == '__main__':
-	for extension_type in VALID_EXTENSION_TYPES:
-		print('========================= TESTING EXTENSION %s =============================' % extension_type)
-		test_extension(extension_type)

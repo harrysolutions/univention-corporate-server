@@ -1,4 +1,4 @@
-#!/usr/share/ucs-test/runner python
+#!/usr/share/ucs-test/runner pytest-3
 ## desc: Register and deregister UDM extension via joinscript
 ## tags: [udm-extensions,apptest]
 ## roles: [domaincontroller_master,domaincontroller_backup,domaincontroller_slave,memberserver]
@@ -15,6 +15,7 @@ import difflib
 
 from univention.testing.debian_package import DebianPackage
 from univention.testing.utils import fail, wait_for_replication
+import pytest
 from univention.testing.udm_extensions import (
 	get_package_name,
 	get_package_version,
@@ -40,7 +41,11 @@ TEST_DATA = (
 )
 
 
-def test_module():
+@pytest.mark.tags('udm-extensions', 'apptest')
+@pytest.mark.roles('domaincontroller_master', 'domaincontroller_backup', 'domaincontroller_slave', 'memberserver')
+@pytest.mark.exposure('dangerous')
+def test_file_integrity_udm_module():
+	"""Register and deregister UDM extension via joinscript"""
 	extension_type = 'module'
 	package_name = get_package_name()
 	package_version = get_package_version()
@@ -131,5 +136,9 @@ def test_module():
 		package.remove()
 
 
-if __name__ == '__main__':
+@pytest.mark.tags('udm-extensions', 'apptest')
+@pytest.mark.roles('domaincontroller_master', 'domaincontroller_backup', 'domaincontroller_slave', 'memberserver')
+@pytest.mark.exposure('dangerous')
+def test_32_file_integrity_udm_module.py():
+	"""Register and deregister UDM extension via joinscript"""
 	test_module()

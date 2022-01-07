@@ -1,4 +1,4 @@
-#!/usr/share/ucs-test/runner python
+#!/usr/share/ucs-test/runner pytest-3
 ## desc: Create extensions with different version ranges
 ## tags: [udm-ldapextensions,apptest]
 ## roles: [domaincontroller_master,domaincontroller_backup,domaincontroller_slave,memberserver]
@@ -22,9 +22,16 @@ from univention.testing.udm_extensions import (
 )
 import os
 import bz2
+import pytest
 import base64
 
-if __name__ == '__main__':
+
+@pytest.mark.tags('udm-ldapextensions', 'apptest')
+@pytest.mark.roles('domaincontroller_master', 'domaincontroller_backup', 'domaincontroller_slave', 'memberserver')
+@pytest.mark.exposure('dangerous')
+@pytest.mark.parametrize('extension_type', VALID_EXTENSION_TYPES)
+def test_listener_version_start_end(udm, ucr, extension_type):
+	"""Create extensions with different version ranges"""
 	ucr = ConfigRegistry()
 	ucr.load()
 
@@ -45,35 +52,34 @@ if __name__ == '__main__':
 			('%s-%s' % (ucr.get('version/version'), ucr.get('version/patchlevel')), '9.9-9', True)):  # lower limit of range is current version
 
 			print('=== Testing range from %s to %s with expected result exists=%s ===' % (version_start, version_end, should_exist))
-			with udm_test.UCSTestUDM() as udm:
-				extension_name = get_extension_name(extension_type)
-				extension_filename = get_extension_filename(extension_type, extension_name)
-				extension_buffer = get_extension_buffer(extension_type, extension_name)
+			extension_name = get_extension_name(extension_type)
+			extension_filename = get_extension_filename(extension_type, extension_name)
+			extension_buffer = get_extension_buffer(extension_type, extension_name)
 
-				dn = udm.create_object(
-					'settings/udm_%s' % extension_type,
-					name=extension_name,
-					data=base64.b64encode(bz2.compress(extension_buffer)),
-					filename=extension_filename,
-					packageversion=package_version,
-					appidentifier=app_id,
-					package=package_name,
-					ucsversionstart=version_start,
-					ucsversionend=version_end,
-					active='FALSE',
-					position='cn=custom attributes,cn=univention,%s' % ucr.get('ldap/base')
-				)
-
-				# wait for replication before local filesystem is checked
-				wait_for_replication()
-
-				# check if registered file has been replicated to local system
-				target_fn = get_absolute_extension_filename(extension_type, extension_filename)
-				exists = os.path.exists(target_fn)
-				if exists != should_exist:
-					fail('ERROR: expected filesystem status mismatch (exists=%s should_exist=%s)' % (exists, should_exist))
+			dn = udm.create_object(
+				'settings/udm_%s' % extension_type,
+				name=extension_name,
+				data=base64.b64encode(bz2.compress(extension_buffer)),
+				filename=extension_filename,
+				packageversion=package_version,
+				appidentifier=app_id,
+				package=package_name,
+				ucsversionstart=version_start,
+				ucsversionend=version_end,
+				active='FALSE',
+				position='cn=custom attributes,cn=univention,%s' % ucr.get('ldap/base')
+			)
 
 			# wait for replication before local filesystem is checked
 			wait_for_replication()
-			if os.path.exists(target_fn):
-				fail('ERROR: file %s should not exist' % target_fn)
+
+			# check if registered file has been replicated to local system
+			target_fn = get_absolute_extension_filename(extension_type, extension_filename)
+			exists = os.path.exists(target_fn)
+			if exists != should_exist:
+				fail('ERROR: expected filesystem status mismatch (exists=%s should_exist=%s)' % (exists, should_exist))
+
+		# wait for replication before local filesystem is checked
+		wait_for_replication()
+		if os.path.exists(target_fn):
+			fail('ERROR: file %s should not exist' % target_fn)

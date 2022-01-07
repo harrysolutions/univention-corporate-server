@@ -1,4 +1,4 @@
-#!/usr/share/ucs-test/runner python
+#!/usr/share/ucs-test/runner pytest-3
 ## desc: Change version of an existing extension
 ## tags: [udm-ldapextensions,apptest]
 ## roles: [domaincontroller_master,domaincontroller_backup,domaincontroller_slave,memberserver]
@@ -20,9 +20,14 @@ from univention.testing.udm_extensions import (
 	VALID_EXTENSION_TYPES,
 )
 import bz2
+import pytest
 import base64
 
-if __name__ == '__main__':
+@pytest.mark.tags('udm-ldapextensions', 'apptest')
+@pytest.mark.roles('domaincontroller_master', 'domaincontroller_backup', 'domaincontroller_slave', 'memberserver')
+@pytest.mark.exposure('dangerous')
+def test_update_packageversion(udm, ucr):
+	"""Change version of an existing extension"""
 	ucr = ConfigRegistry()
 	ucr.load()
 
@@ -38,43 +43,42 @@ if __name__ == '__main__':
 		version_end = random_ucs_version(min_major=5)
 		dn = None
 
-		with udm_test.UCSTestUDM() as udm:
-			oldversion = 0
-			for newversion in (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 8, 9, 3, 0):
-				package_version = '%s-%d' % (package_version_base, newversion)
+		oldversion = 0
+		for newversion in (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 8, 9, 3, 0):
+			package_version = '%s-%d' % (package_version_base, newversion)
 
-				extension_name = get_extension_name(extension_type)
-				extension_filename = get_extension_filename(extension_type, extension_name)
-				extension_buffer = get_extension_buffer(extension_type, extension_name)
+			extension_name = get_extension_name(extension_type)
+			extension_filename = get_extension_filename(extension_type, extension_name)
+			extension_buffer = get_extension_buffer(extension_type, extension_name)
 
-				properties = {
-					'data': base64.b64encode(bz2.compress(extension_buffer)),
-					'filename': '%s.py' % extension_name,
-					'packageversion': package_version,
-					'appidentifier': app_id,
-					'package': package_name,
-					'ucsversionstart': version_start,
-					'ucsversionend': version_end,
-					'active': 'FALSE'
-				}
+			properties = {
+				'data': base64.b64encode(bz2.compress(extension_buffer)),
+				'filename': '%s.py' % extension_name,
+				'packageversion': package_version,
+				'appidentifier': app_id,
+				'package': package_name,
+				'ucsversionstart': version_start,
+				'ucsversionend': version_end,
+				'active': 'FALSE'
+			}
 
-				if not dn:
-					dn = udm.create_object(
+			if not dn:
+				dn = udm.create_object(
+					'settings/udm_%s' % extension_type,
+					name=extension_name,
+					position=udm.UNIVENTION_CONTAINER,
+					**properties
+				)
+			else:
+				try:
+					udm.modify_object(
 						'settings/udm_%s' % extension_type,
-						name=extension_name,
-						position=udm.UNIVENTION_CONTAINER,
+						dn=dn,
 						**properties
 					)
-				else:
-					try:
-						udm.modify_object(
-							'settings/udm_%s' % extension_type,
-							dn=dn,
-							**properties
-						)
-					except udm_test.UCSTestUDM_ModifyUDMObjectFailed as ex:
-						print('CAUGHT EXCEPTION: %s' % ex)
-						if (oldversion < newversion):
-							raise
+				except udm_test.UCSTestUDM_ModifyUDMObjectFailed as ex:
+					print('CAUGHT EXCEPTION: %s' % ex)
+					if (oldversion < newversion):
+						raise
 
-				oldversion = newversion
+			oldversion = newversion

@@ -1,4 +1,4 @@
-#!/usr/share/ucs-test/runner python3
+#!/usr/share/ucs-test/runner pytest-3
 ## desc: Register UMCMessageCatalog via joinscript
 ## tags: [udm-extensions,apptest]
 ## roles: [domaincontroller_master,domaincontroller_backup,domaincontroller_slave,memberserver]
@@ -15,6 +15,7 @@ import base64
 from univention.testing.debian_package import DebianPackage
 from univention.testing.utils import fail, wait_for_replication, verify_ldap_object
 from univention.testing.strings import random_ucs_version
+import pytest
 from univention.testing.udm_extensions import (
 	get_package_name, get_package_version, get_extension_name, get_extension_filename, get_extension_buffer,
 	get_unjoin_script_buffer, get_join_script_buffer, call_join_script, get_dn_of_extension_by_name,
@@ -41,7 +42,11 @@ TEST_DATA = (
 )
 
 
-def test_module():
+@pytest.mark.tags('udm-extensions', 'apptest')
+@pytest.mark.roles('domaincontroller_master', 'domaincontroller_backup', 'domaincontroller_slave', 'memberserver')
+@pytest.mark.exposure('dangerous')
+def test_umcmessagecatalog():
+	"""Register UMCMessageCatalog via joinscript"""
 	extension_type = 'module'
 	package_name = get_package_name()
 	package_version = get_package_version()
@@ -115,5 +120,9 @@ def test_module():
 		package.remove()
 
 
-if __name__ == '__main__':
+@pytest.mark.tags('udm-extensions', 'apptest')
+@pytest.mark.roles('domaincontroller_master', 'domaincontroller_backup', 'domaincontroller_slave', 'memberserver')
+@pytest.mark.exposure('dangerous')
+def test_33_umcmessagecatalog.py():
+	"""Register UMCMessageCatalog via joinscript"""
 	test_module()

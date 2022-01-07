@@ -1,4 +1,4 @@
-#!/usr/share/ucs-test/runner python3
+#!/usr/share/ucs-test/runner pytest-3
 ## desc: Register UDM extension with non-join-accounts
 ## tags: [udm-extensions,apptest]
 ## roles: [domaincontroller_master,domaincontroller_backup,domaincontroller_slave,memberserver]
@@ -9,9 +9,8 @@
 ##   - shell-univention-lib
 
 from __future__ import print_function
-from univention.config_registry import ConfigRegistry
-from univention.testing.debian_package import DebianPackage
-from univention.testing.utils import fail, wait_for_replication
+from test_udm_extensions import temp_deb_pkg
+from univention.testing.utils import wait_for_replication
 from univention.testing.udm_extensions import (
 	get_package_name,
 	get_package_version,
@@ -21,13 +20,23 @@ from univention.testing.udm_extensions import (
 	get_extension_buffer,
 	call_cmd,
 	get_dn_of_extension_by_name,
-	remove_extension_by_name,
 	VALID_EXTENSION_TYPES
 )
-import univention.testing.udm as udm_test
+import pytest
 
 
-def test_extension(extension_type, dn, password):
+@pytest.fixture
+def user_password():
+	return 'univention'
+
+
+@pytest.fixture
+def user_dn(udm, user_password):
+	dn, username = udm.create_user(password=user_password)
+	return dn
+
+
+def _test_extension(extension_type, dn, password):
 	package_name = get_package_name()
 	package_version = get_package_version()
 	extension_name = get_extension_name(extension_type)
@@ -35,8 +44,7 @@ def test_extension(extension_type, dn, password):
 	joinscript_buffer = get_join_script_buffer(extension_type, '/usr/share/%s/%s' % (package_name, extension_filename), version_start='5.0-0')
 	extension_buffer = get_extension_buffer(extension_type, extension_name)
 
-	package = DebianPackage(name=package_name, version=package_version)
-	try:
+	with temp_deb_pkg(package_name, package_version, extension_type, extension_name) as package:
 		# create package and install it
 		package.create_join_script_from_buffer('66%s.inst' % package_name, joinscript_buffer)
 		package.create_usr_share_file_from_buffer(extension_filename, extension_buffer)
@@ -44,34 +52,20 @@ def test_extension(extension_type, dn, password):
 		package.install()
 
 		exitcode = call_cmd(['/usr/lib/univention-install/66%s.inst' % package_name, '--binddn', dn, '--bindpwd', password], fail_on_error=False)
-		if not exitcode:
-			fail('ERROR: registerLDAPExtension() did not fail even if machine account is used')
+		assert exitcode, 'ERROR: registerLDAPExtension() did not fail even if machine account is used'
 
 		# wait until removed object has been handled by the listener
 		wait_for_replication()
 
 		dnlist = get_dn_of_extension_by_name(extension_type, extension_name)
-		if dnlist:
-			fail('ERROR: Machine account is able to create UDM %s extension' % (extension_type,))
-
-	finally:
-		print('Removing UDM extension from LDAP')
-		remove_extension_by_name(extension_type, extension_name, fail_on_error=False)
-
-		print('Uninstalling binary package %r' % package_name)
-		package.uninstall()
-
-		print('Removing source package')
-		package.remove()
+		assert not dnlist, 'ERROR: Machine account is able to create UDM %s extension' % (extension_type,)
 
 
-if __name__ == '__main__':
-	ucr = ConfigRegistry()
-	ucr.load()
-	with udm_test.UCSTestUDM() as udm:
-		password = 'univention'
-		dn, username = udm.create_user(password=password)
-		for extension_type in VALID_EXTENSION_TYPES:
-			print('========================= TESTING EXTENSION %s =============================' % extension_type)
-			test_extension(extension_type, dn, password)
-			test_extension(extension_type, ucr.get('ldap/hostdn'), open('/etc/machine.secret', 'r').read())
+@pytest.mark.tags('udm-extensions', 'apptest')
+@pytest.mark.roles('domaincontroller_master', 'domaincontroller_backup', 'domaincontroller_slave', 'memberserver')
+@pytest.mark.exposure('dangerous')
+@pytest.mark.parametrize('extension_type', VALID_EXTENSION_TYPES)
+def test_register_with_non_join_accounts(udm, ucr, user_password, user_dn, extension_type):
+	"""Register UDM extension with non-join-accounts"""
+	_test_extension(extension_type, user_dn, user_password)
+	_test_extension(extension_type, ucr.get('ldap/hostdn'), open('/etc/machine.secret', 'r').read())

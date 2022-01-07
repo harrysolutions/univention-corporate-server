@@ -1,4 +1,4 @@
-#!/usr/share/ucs-test/runner python3
+#!/usr/share/ucs-test/runner pytest-3
 ## desc: Test extension update with other package name
 ## tags: [udm-extensions,apptest]
 ## roles: [domaincontroller_master,domaincontroller_backup,domaincontroller_slave,memberserver]
@@ -10,7 +10,7 @@
 
 from __future__ import print_function
 from univention.testing.debian_package import DebianPackage
-from univention.testing.utils import wait_for_replication, fail
+from univention.testing.utils import wait_for_replication
 from univention.testing.strings import random_name, random_version, random_ucs_version
 from univention.testing.udm_extensions import (
 	get_package_name,
@@ -23,10 +23,16 @@ from univention.testing.udm_extensions import (
 	get_absolute_extension_filename,
 	remove_extension_by_name,
 )
+import pytest
 import random
 
 
-def test_extension(extension_type):
+@pytest.mark.tags('udm-extensions', 'apptest')
+@pytest.mark.roles('domaincontroller_master', 'domaincontroller_backup', 'domaincontroller_slave', 'memberserver')
+@pytest.mark.exposure('dangerous')
+@pytest.mark.parametrize('extension_type', VALID_EXTENSION_TYPES)
+def test_update_extension_via_other_packagename(extension_type):
+	"""Test extension update with other package name"""
 	version = random_version()
 	package_version_LOW = '%s.%d' % (version, random.randint(0, 4))
 	package_version_HIGH = '%s.%d' % (version, random.randint(5, 9))
@@ -70,23 +76,11 @@ def test_extension(extension_type):
 			wait_for_replication()
 
 			content = open(get_absolute_extension_filename(extension_type, extension_filename)).read()
-			if extension_identifier not in content:
-				fail('ERROR: UDM extension of package %d has not been written to disk (%s)' % (len(packages), extension_filename,))
+			assert extension_identifier in content, 'ERROR: UDM extension of package %d has not been written to disk (%s)' % (len(packages), extension_filename,)
 
 	finally:
-		print('Removing UDM extension from LDAP')
 		remove_extension_by_name(extension_type, extension_name, fail_on_error=False)
-
 		for package in packages:
-			print('Uninstalling binary package %r' % package.get_package_name())
 			package.uninstall()
-
-		print('Removing source package')
 		for package in packages:
 			package.remove()
-
-
-if __name__ == '__main__':
-	for extension_type in VALID_EXTENSION_TYPES:
-		print('========================= TESTING EXTENSION %s =============================' % extension_type)
-		test_extension(extension_type)
