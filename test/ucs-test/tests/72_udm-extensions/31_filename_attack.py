@@ -8,8 +8,8 @@
 
 from __future__ import print_function
 import univention.testing.udm as udm_test
-from univention.testing.utils import wait_for_replication, fail
-from univention.testing.strings import random_name, random_version, random_ucs_version
+from univention.testing.utils import wait_for_replication
+from univention.testing.strings import random_ucs_version
 from univention.testing.udm_extensions import (
 	get_package_name,
 	get_package_version,
@@ -21,13 +21,14 @@ import bz2
 import pytest
 import base64
 
+
 @pytest.mark.tags('udm-ldapextensions', 'apptest')
 @pytest.mark.roles('domaincontroller_master', 'domaincontroller_backup', 'domaincontroller_slave', 'memberserver')
 @pytest.mark.exposure('dangerous')
 def test_filename_attack(udm):
 	"""Test liability to a simple filename attack"""
 	# wait for replicate before test starts
-	wait_for_replication()
+	wait_for_replication()  # TODO: can this be removed (and the rest parametrized) ?
 
 	filename = 'ucs_test_64_filename_attack'
 	version_start = random_ucs_version(max_major=2)
@@ -37,13 +38,11 @@ def test_filename_attack(udm):
 		print('========================= TESTING EXTENSION %s =============================' % extension_type)
 		package_name = get_package_name()
 		package_version = get_package_version()
-		app_id = '%s-%s' % (random_name(), random_version())
 		extension_name = get_extension_name(extension_type)
 		extension_buffer = '# THIS IS NOT GOOD!'
 
-
 		try:
-			dn = udm.create_object(
+			udm.create_object(
 				'settings/udm_%s' % extension_type,
 				name=extension_name,
 				data=base64.b64encode(bz2.compress(extension_buffer)),
@@ -62,11 +61,6 @@ def test_filename_attack(udm):
 		wait_for_replication()
 
 		# check if registered file has been replicated to local system
-		if os.path.exists('/tmp/%s' % filename):
-			fail('ERROR: path attack possible')
-
-		if os.path.islink('/tmp/%s' % filename):
-			fail('ERROR: path attack possible')
-
-		if os.path.isfile('/tmp/%s' % filename):
-			fail('ERROR: path attack possible')
+		assert not os.path.exists('/tmp/%s' % filename), 'ERROR: path attack possible'
+		assert not os.path.islink('/tmp/%s' % filename), 'ERROR: path attack possible'
+		assert not os.path.isfile('/tmp/%s' % filename), 'ERROR: path attack possible'

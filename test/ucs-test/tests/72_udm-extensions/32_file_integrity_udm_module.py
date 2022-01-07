@@ -13,8 +13,8 @@ import os
 import hashlib
 import difflib
 
-from univention.testing.debian_package import DebianPackage
-from univention.testing.utils import fail, wait_for_replication
+from test_udm_extensions import temp_deb_pkg
+from univention.testing.utils import wait_for_replication
 import pytest
 from univention.testing.udm_extensions import (
 	get_package_name,
@@ -26,7 +26,6 @@ from univention.testing.udm_extensions import (
 	get_join_script_buffer,
 	call_join_script,
 	get_dn_of_extension_by_name,
-	remove_extension_by_name,
 	call_unjoin_script,
 	get_absolute_extension_filename
 )
@@ -64,8 +63,7 @@ def test_file_integrity_udm_module():
 
 	print(joinscript_buffer)
 
-	package = DebianPackage(name=package_name, version=package_version)
-	try:
+	with temp_deb_pkg(package_name, package_version, extension_type, extension_name) as package:
 		# create package and install it
 		package.create_join_script_from_buffer('66%s.inst' % package_name, joinscript_buffer)
 		package.create_unjoin_script_from_buffer('66%s-uninstall.uinst' % package_name, unjoinscript_buffer)
@@ -81,15 +79,11 @@ def test_file_integrity_udm_module():
 		wait_for_replication()
 
 		dnlist = get_dn_of_extension_by_name(extension_type, extension_name)
-		if not dnlist:
-			fail('ERROR: cannot find UDM extension object with cn=%s in LDAP' % extension_name)
+		assert dnlist, 'ERROR: cannot find UDM extension object with cn=%s in LDAP' % extension_name
 
 		# check if registered file has been replicated to local system
 		target_fn = get_absolute_extension_filename(extension_type, extension_filename)
-		if os.path.exists(target_fn):
-			print('FILE REPLICATED: %r' % target_fn)
-		else:
-			fail('ERROR: target file %s does not exist' % target_fn)
+		assert os.path.exists(target_fn), 'ERROR: target file %s does not exist' % target_fn
 
 		# check if sha1(buffer) == sha1(file)
 		hash_buffer = hashlib.sha1(extension_buffer).hexdigest()
@@ -98,17 +92,16 @@ def test_file_integrity_udm_module():
 		print('HASH FILE: %r' % hash_file)
 		if hash_buffer != hash_file:
 			print('\n'.join(difflib.context_diff(open(target_fn).read(), extension_buffer, fromfile='filename', tofile='buffer')))
-			fail('ERROR: sha1 sums of file and BUFFER DIffer (fn=%s ; file=%s ; buffer=%s)' % (target_fn, hash_file, hash_buffer))
+			pytest.fail('ERROR: sha1 sums of file and BUFFER DIffer (fn=%s ; file=%s ; buffer=%s)' % (target_fn, hash_file, hash_buffer))
 
 		for option_type, src_fn, filename in TEST_DATA:
 			filename = filename % extension_name.replace('/', '-')
-			if not os.path.exists(filename):
-				fail('ERROR: file %r of type %r does not exist' % (filename, option_type))
+			assert os.path.exists(filename), 'ERROR: file %r of type %r does not exist' % (filename, option_type)
 			hash_buffer = hashlib.sha1(buffers[src_fn]).hexdigest()
 			hash_file = hashlib.sha1(open(filename).read()).hexdigest()
 			if hash_buffer != hash_file:
 				print('\n'.join(difflib.context_diff(open(filename).read(), buffers[src_fn], fromfile='filename', tofile='buffer')))
-				fail('ERROR: sha1 sums of file and buffer differ (fn=%s ; file=%s ; buffer=%s)' % (filename, hash_file, hash_buffer))
+				pytest.fail('ERROR: sha1 sums of file and buffer differ (fn=%s ; file=%s ; buffer=%s)' % (filename, hash_file, hash_buffer))
 
 		call_unjoin_script('66%s-uninstall.uinst' % package_name)
 
@@ -116,29 +109,8 @@ def test_file_integrity_udm_module():
 		wait_for_replication()
 
 		dnlist = get_dn_of_extension_by_name(extension_type, extension_name)
-		if dnlist:
-			fail('ERROR: UDM extension object with cn=%s is still present in LDAP' % extension_name)
+		assert not dnlist, 'ERROR: UDM extension object with cn=%s is still present in LDAP' % extension_name
 
 		# check if registered file has been removed from local system
-		if os.path.exists(target_fn):
-			fail('ERROR: target file %s is still present' % target_fn)
-		else:
-			print('FILE HAS BEEN REMOVED: %r' % target_fn)
-
-	finally:
-		print('Removing UDM extension from LDAP')
-		remove_extension_by_name(extension_type, extension_name, fail_on_error=False)
-
-		print('Uninstalling binary package %r' % package_name)
-		package.uninstall()
-
-		print('Removing source package')
-		package.remove()
-
-
-@pytest.mark.tags('udm-extensions', 'apptest')
-@pytest.mark.roles('domaincontroller_master', 'domaincontroller_backup', 'domaincontroller_slave', 'memberserver')
-@pytest.mark.exposure('dangerous')
-def test_32_file_integrity_udm_module.py():
-	"""Register and deregister UDM extension via joinscript"""
-	test_module()
+		assert not os.path.exists(target_fn), 'ERROR: target file %s is still present' % target_fn
+		print('FILE HAS BEEN REMOVED: %r' % target_fn)

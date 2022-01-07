@@ -82,8 +82,13 @@ def test_update_extension_via_package_expected_fail(extension_type):
 				pytest.fail('ERROR: the extension update has been performed but should not (old version=%s ; new version=%s)' % (package_version_HIGH, package_version_LOW))
 
 	finally:
+		print('Removing UDM extension from LDAP')
 		remove_extension_by_name(extension_type, extension_name, fail_on_error=False)
+
 		for package in packages:
+			print('Uninstalling binary package %r' % package.get_package_name())
 			package.uninstall()
+
+		print('Removing source package')
 		for package in packages:
 			package.remove()

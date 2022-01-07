@@ -12,14 +12,14 @@ from __future__ import print_function
 import os
 import base64
 
-from univention.testing.debian_package import DebianPackage
-from univention.testing.utils import fail, wait_for_replication, verify_ldap_object
+from test_udm_extensions import temp_deb_pkg
+from univention.testing.utils import wait_for_replication, verify_ldap_object
 from univention.testing.strings import random_ucs_version
 import pytest
 from univention.testing.udm_extensions import (
 	get_package_name, get_package_version, get_extension_name, get_extension_filename, get_extension_buffer,
 	get_unjoin_script_buffer, get_join_script_buffer, call_join_script, get_dn_of_extension_by_name,
-	remove_extension_by_name, call_unjoin_script, get_absolute_extension_filename
+	call_unjoin_script, get_absolute_extension_filename
 )
 
 mo_file = base64.b64decode('''
@@ -69,8 +69,7 @@ def test_umcmessagecatalog():
 	unjoinscript_buffer = get_unjoin_script_buffer(extension_type, extension_name, package_name)
 	extension_buffer = get_extension_buffer(extension_type, extension_name)
 
-	package = DebianPackage(name=package_name, version=package_version)
-	try:
+	with temp_deb_pkg(package_name, package_version, extension_type, extension_name) as package:
 		# create package and install it
 		package.create_join_script_from_buffer('66%s.inst' % package_name, joinscript_buffer)
 		package.create_unjoin_script_from_buffer('66%s-uninstall.uinst' % package_name, unjoinscript_buffer)
@@ -86,19 +85,15 @@ def test_umcmessagecatalog():
 		wait_for_replication()
 
 		dnlist = get_dn_of_extension_by_name(extension_type, extension_name)
-		if not dnlist:
-			fail('ERROR: cannot find UDM extension object with cn=%s in LDAP' % extension_name)
+		assert dnlist, 'ERROR: cannot find UDM extension object with cn=%s in LDAP' % extension_name
 
 		# check if registered file has been replicated to local system
 		target_fn = get_absolute_extension_filename(extension_type, extension_filename)
-		if os.path.exists(target_fn):
-			print('FILE REPLICATED: %r' % target_fn)
-		else:
-			fail('ERROR: target file %s does not exist' % target_fn)
+		assert os.path.exists(target_fn), 'ERROR: target file %s does not exist' % target_fn
 
 		for option_type, src_fn, filename in TEST_DATA:
 			if option_type == 'umcmessagecatalog' and not os.path.exists(filename):
-				fail('ERROR: file %r of type %r does not exist' % (filename, option_type))
+				pytest.fail('ERROR: file %r of type %r does not exist' % (filename, option_type))
 		dnlist = get_dn_of_extension_by_name(extension_type, extension_name)
 
 		verify_ldap_object(dnlist[0], {
@@ -108,21 +103,3 @@ def test_umcmessagecatalog():
 		})
 
 		call_unjoin_script('66%s-uninstall.uinst' % package_name)
-
-	finally:
-		print('Removing UDM extension from LDAP')
-		remove_extension_by_name(extension_type, extension_name, fail_on_error=False)
-
-		print('Uninstalling binary package %r' % package_name)
-		package.uninstall()
-
-		print('Removing source package')
-		package.remove()
-
-
-@pytest.mark.tags('udm-extensions', 'apptest')
-@pytest.mark.roles('domaincontroller_master', 'domaincontroller_backup', 'domaincontroller_slave', 'memberserver')
-@pytest.mark.exposure('dangerous')
-def test_33_umcmessagecatalog.py():
-	"""Register UMCMessageCatalog via joinscript"""
-	test_module()
