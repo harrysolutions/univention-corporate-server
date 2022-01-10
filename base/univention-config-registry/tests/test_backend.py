@@ -126,7 +126,7 @@ class TestConfigRegistry(object):
 	def test_get_int_string(self, ucr0):
 		"""Test set ucr.get_int(key, default)."""
 		ucr0['foo'] = 9 
-		assert ucr0.get_int('foo', 9 ) == 9
+		assert ucr0.get_int('foo', 9) == 9
 
 	def test_empty_get(self, ucr0):
 		"""Test empty ucr.get(key)."""
