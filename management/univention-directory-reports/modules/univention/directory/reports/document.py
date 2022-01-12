@@ -3,7 +3,7 @@
 # Univention Directory Reports
 #  creates a report document
 #
-# Copyright 2007-2021 Univention GmbH
+# Copyright 2007-2022 Univention GmbH
 #
 # https://www.univention.de/
 #
@@ -93,9 +93,7 @@ class Document(object):
 			suffix = self._template.rsplit('.', 1)[1]
 		if output_path is not None and not os.path.exists(output_path):
 			os.makedirs(output_path)
-		report = 'univention-directory-reports-'
-		if output_name is not None:
-			report = output_name
+		report = output_name or 'univention-directory-reports-'
 		fd, filename = tempfile.mkstemp(suffix, report, dir=output_path)
 		os.chmod(filename, 0o644)
 		os.close(fd)
