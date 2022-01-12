@@ -46,6 +46,7 @@ class Config(ConfigParser):
 		self._oldHeader = defaults.get('header', None)
 		self._oldFooter = defaults.get('footer', None)
 		self.default_report_name = defaults.get('report', None)
+		self.default_report_path = defaults.get('output_path', None)
 		self._reports = {}
 
 		# get the language, defaults to English if nothing is set
@@ -136,3 +137,9 @@ class Config(ConfigParser):
 		if not report:
 			return None
 		return self._guess_path(report[1], report[2])
+
+	def get_output_path(self):
+		path = self.default_report_path
+		if not path:
+			return None
+		return path
