@@ -79,18 +79,24 @@ class Document(object):
 			files = (self._template, )
 		else:
 			files = tuple()
+
 		for filename in files:
 			if not os.path.isfile(filename):
 				raise ReportError(_("Configuration error: File %r could not be opened.") % (filename,))
 
-	def __create_tempfile(self):
+	def __create_tempfile(self, output_path=None, output_name=None):
 		if self._type == Document.TYPE_LATEX:
 			suffix = '.src'
 		elif self._type == Document.TYPE_CSV:
 			suffix = '.csv'
 		else:
 			suffix = self._template.rsplit('.', 1)[1]
-		fd, filename = tempfile.mkstemp(suffix, 'univention-directory-reports-')
+		if output_path is not None and not os.path.exists(output_path):
+			os.makedirs(output_path)
+		report = 'univention-directory-reports-'
+		if output_name is not None:
+			report = output_name
+		fd, filename = tempfile.mkstemp(suffix, report, dir=output_path)
 		os.chmod(filename, 0o644)
 		os.close(fd)
 
@@ -105,9 +111,9 @@ class Document(object):
 		output = Output(tks, fd=fd)
 		output.write()
 
-	def create_source(self, objects=[]):
+	def create_source(self, objects=[], output_path=None, output_name=None):
 		"""Create report from objects (list of DNs)."""
-		tmpfile = self.__create_tempfile()
+		tmpfile = self.__create_tempfile(output_path, output_name)
 		admin.set_format(self._type)
 		parser = Parser(filename=self._template)
 		parser.tokenize()
