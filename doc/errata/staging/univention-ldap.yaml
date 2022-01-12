@@ -1,0 +1,14 @@
+product: ucs
+release: '5.0'
+version: [1]
+scope: ucs_5.0-0-errata5.0-1
+src: univention-ldap
+fix:
+desc: |-
+  This update addresses the following issues:
+  * A new UCR variable "ldap/translog-ignore-temporary" has been created
+   to control if UDM temporary objects should be considered for replication
+   by the Listener/Notifier mechanism. This variable is applicable only to the
+   UCS Primary Directory Node. For new installations the default is "yes"
+   For updated UCS systems it will not be activated autoamtically.
+bug: [48626]
