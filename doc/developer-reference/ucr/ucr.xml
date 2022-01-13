@@ -92,29 +92,7 @@ esac
 							It returns 0 (success) for the values <simplelist type="inline"><member>"1"</member><member>"yes"</member><member>"on"</member><member>"true"</member><member>"enable"</member><member>"enabled"</member></simplelist>, 1 for the negated values <simplelist type="inline"><member>"0"</member><member>"no"</member><member>"off"</member><member>"false"</member><member>"disable"</member><member>"disabled"</member></simplelist>.
 							For all other values it returns a value of 2 to indicate inappropriate usage.
 						</para>
-											<term>
-						<cmdsynopsis>
-							<command>ucr</command>
-							<arg choice='plain'>get_int</arg>
-							<arg choice='plain'>
-								<replaceable>key</replaceable>
-							</arg>
-						</cmdsynopsis>
-					</term>
-					<listitem>
-						<para>
-							Return the current value of the &ucsUCRV; <varname>key</varname>.
-						</para>
-						<example id="ucr:get_int">
-							<title>Use of <command>ucr get_int</command></title>
-							<programlisting><![CDATA[
-case "$(ucr get system/role)" in
-	domaincontroller_*)
-		echo "Running on a UCS Directory Node"
-		;;
-esac
-								]]></programlisting>
-						</example>
+
 						<example id="ucr:true">
 							<title>Use of <command>is_ucr_true</command></title>
 							<programlisting><![CDATA[
@@ -335,9 +313,20 @@ handler_set(['foo=bar', 'baz?42'])
 handler_unset(['foo', 'bar'])
 				]]></programlisting>
 			</example>
+			<example id="ucr:python:get_int">
+				<title>Setting and unsetting &ucsUCRV;s in Python</title>
+				<programlisting><![CDATA[
+from univention.config_registry import ConfigRegistry
+ucr = ConfigRegistry()
+ucr.load()
+ucr['foo']="9"
+ucr.get_int("foo")
+ucr.get_int("foo",10)
+ucr.get_int("foo", '10')
+				]]></programlisting>
+			</example>
 		</section>
 	</section>
-
 	<section id="ucr:conf">
 		<title>Configuration files</title>
 		<para>
