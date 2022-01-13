@@ -314,7 +314,7 @@ handler_unset(['foo', 'bar'])
 				]]></programlisting>
 			</example>
 			<example id="ucr:python:get_int">
-				<title>Setting and unsetting &ucsUCRV;s in Python</title>
+				<title>Getting integer values from &ucsUCRV;s in Python</title>
 				<programlisting><![CDATA[
 from univention.config_registry import ConfigRegistry
 ucr = ConfigRegistry()
