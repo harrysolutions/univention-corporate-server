@@ -347,7 +347,12 @@ class ReadOnlyConfigRegistry(_M, BooleanConfigRegistry):
 		try:
 			return int(self[key])
 		except (KeyError, ValueError):
-			return default
+			try:
+				return int(default)
+			except TypeError:
+				if default is None:
+					return default
+				raise
 
 	@overload
 	def _merge(self):  # pragma: no cover
