@@ -342,22 +342,29 @@ class ReadOnlyConfigRegistry(_M, BooleanConfigRegistry):
 			return (reg, value) if getscope else value
 		return default
 
+	@overload
 	def get_int(self, key, default=None):
-		# type: (str, _VT) -> int
+		# type: (str, _VT) -> Union[int, _VT]
+		pass
+
+	@overload  # type: ignore
+	def get_int(self, key, default, getscope):
+		# type: (str, _VT, Literal[True]) -> Union[Tuple[int, str], _VT]
+		pass
+
+	@overload
+	def get_int(self, key, default=None):
+		# type: (int, _VT) -> Union[int, _VT]
 		try:
 			return int(self[key])
 		except (KeyError, ValueError):
-			try:
-				return int(default)
-			except (KeyError, TypeError, ValueError):
-				if default is None:
-					return default
-				raise
+			return default
 
 	@overload
 	def _merge(self):  # pragma: no cover
 		# type: () -> Dict[str, str]
 		pass
+
 
 	@overload
 	def _merge(self, getscope):  # noqa F811 # pragma: no cover
