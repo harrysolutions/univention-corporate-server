@@ -214,6 +214,22 @@ class object(univention.admin.handlers.simpleLdap):
 		self._updateZone()
 
 	@classmethod
+	def rewrite_filter(cls, filter, mapping):
+		if filter.variable == 'ip':
+			filter.variable = 'relativeDomainName'
+			if ':' in filter.value:
+				addr = ipaddress.IPv6Address(u'%s' % (filter.value,))
+				raise NotImplementedError('IPv6')
+			else:
+				subnets = [ipaddress.IPv4Interface(u'%s/%d' % (filter.value, netmask)) for netmask in (24, 16, 8)]
+				subnets = [s.network.network_address.compressed.replace('.0', '') for s in subnets]
+			filter.transform_to_conjunction(univention.admin.filter.conjunction('|', [
+				rewrite_rev(expression('ip', filter.value), subnet=subnet) for subnet in subnets
+			]))
+		else:
+			super(object, cls).rewrite_filter(filter, mapping)
+
+	@classmethod
 	def lookup_filter_superordinate(cls, filter, superordinate):
 		filter.expressions.append(univention.admin.filter.expression('zoneName', superordinate.mapping.mapValueDecoded('subnet', superordinate['subnet']), escape=True))
 		filter = rewrite_rev(filter, superordinate.info['subnet'])
