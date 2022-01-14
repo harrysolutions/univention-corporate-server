@@ -318,7 +318,7 @@ handler_unset(['foo', 'bar'])
 				<programlisting><![CDATA[
 from univention.config_registry import ucr
 print(ucr.get_int("key"))
-print(ucr.get_int("key",10))
+print(ucr.get_int("key", 10))
 				]]></programlisting>
 			</example>
 		</section>
