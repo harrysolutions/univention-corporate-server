@@ -316,13 +316,9 @@ handler_unset(['foo', 'bar'])
 			<example id="ucr:python:get_int">
 				<title>Getting integer values from &ucsUCRV;s in Python</title>
 				<programlisting><![CDATA[
-from univention.config_registry import ConfigRegistry
-ucr = ConfigRegistry()
-ucr.load()
-ucr['foo']="9"
-ucr.get_int("foo")
-ucr.get_int("foo",10)
-ucr.get_int("foo", '10')
+from univention.config_registry import ucr
+print(ucr.get_int("key"))
+print(ucr.get_int("key",10))
 				]]></programlisting>
 			</example>
 		</section>

@@ -343,13 +343,13 @@ class ReadOnlyConfigRegistry(_M, BooleanConfigRegistry):
 		return default
 
 	def get_int(self, key, default=None):
-		# type: (str, _VT) -> Union[int, _VT]
+		# type: (str, _VT) -> int
 		try:
 			return int(self[key])
 		except (KeyError, ValueError):
 			try:
 				return int(default)
-			except TypeError:
+			except (KeyError, TypeError, ValueError):
 				if default is None:
 					return default
 				raise
