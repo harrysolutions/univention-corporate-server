@@ -371,7 +371,6 @@ class ReadOnlyConfigRegistry(_M, BooleanConfigRegistry):
 		# type: () -> Dict[str, str]
 		pass
 
-
 	@overload
 	def _merge(self, getscope):  # noqa F811 # pragma: no cover
 		# type: (Literal[True]) -> Dict[str, Tuple[int, str]]
