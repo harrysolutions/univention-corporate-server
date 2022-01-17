@@ -343,16 +343,16 @@ class ReadOnlyConfigRegistry(_M, BooleanConfigRegistry):
 		return default
 
 	@overload
-	def get_int(self, key, default=None):
+	def get_int(self, key, default=None): # noqa F811 # pragma: no cover
 		# type: (str, _VT) -> Union[int, _VT]
 		pass
 
 	@overload  # type: ignore
-	def get_int(self, key, default, getscope):
+	def get_int(self, key, default, getscope): # noqa F811 # pragma: no cover
 		# type: (str, _VT, Literal[True]) -> Union[Tuple[int, str], _VT]
 		pass
 
-	def get_int(self, key, default=None):
+	def get_int(self, key, default=None): # noqa F811
 		# type: (str) -> Optional[int]
 		"""
 		Return registry value as int.
