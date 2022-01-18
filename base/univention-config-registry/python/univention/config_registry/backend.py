@@ -59,7 +59,7 @@ try:
 	_T = TypeVar('_T', bound='ReadOnlyConfigRegistry')
 	_VT = TypeVar('_VT')
 except ImportError:  # pragma: no cover
-	def overload(f):
+	def overload(f): #type ignore
 		pass
 
 __all__ = ['StrictModeException', 'exception_occured', 'SCOPE', 'ConfigRegistry']
@@ -344,16 +344,16 @@ class ReadOnlyConfigRegistry(_M, BooleanConfigRegistry):
 
 	@overload
 	def get_int(self, key, default=None): # noqa F811 # pragma: no cover
-		# type: (str, _VT) -> Union[int, _VT]
+		# type: (str) -> Optional[int]
 		pass
 
 	@overload  # type: ignore
-	def get_int(self, key, default, getscope): # noqa F811 # pragma: no cover
-		# type: (str, _VT, Literal[True]) -> Union[Tuple[int, str], _VT]
+	def get_int(self, key, default): # noqa F811 # pragma: no cover
+		# type: (str, _VT) -> Union[int, _VT]
 		pass
 
 	def get_int(self, key, default=None): # noqa F811
-		# type: (str) -> Optional[int]
+		# type: (str, Optional[_VT]) -> Union[int, _VT, None]
 		"""
 		Return registry value as int.
 
@@ -362,8 +362,8 @@ class ReadOnlyConfigRegistry(_M, BooleanConfigRegistry):
 		:returns: the registry value or the default.
 		"""
 		try:
-			return int(self[key])
-		except (KeyError, ValueError):
+			return int(self[key])  # type: ignore
+		except (KeyError, TypeError, ValueError):
 			return default
 
 	@overload
