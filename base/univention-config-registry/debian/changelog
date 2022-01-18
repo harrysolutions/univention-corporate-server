@@ -1,6 +1,7 @@
 univention-config-registry (15.0.7-16) unstable; urgency=medium
 
-  * Bug #20933: include dependencies of python-typing for overloaded methods 
+  * Bug #20933: include dependencies of python-typing for overloaded
+    methods and stored it follow an alphabetically increase order
 
  -- Ildefonso González Sánchez <isanchez.extern@univention.de>  Tue, 18 Jan 2022 16:48:34 +0100
 
