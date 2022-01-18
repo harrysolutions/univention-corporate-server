@@ -115,13 +115,11 @@ def main():
 		dest='debug', default=0,
 		help='if given than debugging is activated and set to the specified level')
 	parser.add_option(
-		'-o', '--output-dir', action='store', type='string',
-		dest='output', default=None,
-		help='location of the output report file [%default]')
+		'-o', '--output-dir', action='store', dest='output',
+		help='location of the output report file')
 	parser.add_option(
-		'-f', '--file-name', action='store', type='string',
-		dest='output_name', default=None,
-		help='custom output report file name [%default]')
+		'-f', '--file-name', action='store', dest='output_name',
+		help='custom output report file name')
 
 	(options, args) = parser.parse_args()
 

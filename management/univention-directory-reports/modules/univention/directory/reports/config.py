@@ -139,7 +139,4 @@ class Config(ConfigParser):
 		return self._guess_path(report[1], report[2])
 
 	def get_output_path(self):
-		path = self.default_report_path
-		if not path:
-			return None
-		return path
+		return os.path.exists(self.default_report_path) or None
