@@ -38,6 +38,7 @@ from __future__ import print_function
 import os
 import re
 import io
+import sys
 import json
 import time
 import copy
@@ -3000,10 +3001,14 @@ class Object(FormBase, Resource):
 		self.add_caching(public=False, must_revalidate=True)
 		self.content_negotiation(dict(status))
 		try:
-			dn = yield self.pool.submit(module.move, dn, position)
+			try:
+				dn = yield self.pool.submit(module.move, dn, position)
+			except udm_errors.invalidOperation as exc:
+				self.raise_sanitization_error('position', str(UDM_Error(exc)))
+			except UDM_Error as exc:
+				self.raise_sanitization_error('position', str(exc))
 		except Exception:
-			status['errors'] = True
-			status['traceback'] = traceback.format_exc()  # FIXME: error handling
+			status['exception'] = sys.exc_info()  # TODO: since we use shared memory this doesn't work anymore
 			raise
 		else:
 			status['uri'] = self.urljoin(quote_dn(dn))
@@ -3514,6 +3519,8 @@ class Operations(Resource):
 		if progress not in progressbars:
 			raise NotFound()
 		result = dict(progressbars[progress])
+		if result.get('exception'):
+			six.reraise(*result.pop('exception'))
 		if result.get('uri'):
 			self.set_status(303)
 			self.add_header('Location', result['uri'])
