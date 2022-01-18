@@ -59,7 +59,7 @@ try:
 	_T = TypeVar('_T', bound='ReadOnlyConfigRegistry')
 	_VT = TypeVar('_VT')
 except ImportError:  # pragma: no cover
-	def overload(f): #type ignore
+	def overload(f):  # type ignore
 		pass
 
 __all__ = ['StrictModeException', 'exception_occured', 'SCOPE', 'ConfigRegistry']
