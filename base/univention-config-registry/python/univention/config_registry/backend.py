@@ -343,7 +343,7 @@ class ReadOnlyConfigRegistry(_M, BooleanConfigRegistry):
 		return default
 
 	@overload
-	def get_int(self, key, default=None): # noqa F811 # pragma: no cover
+	def get_int(self, key): # noqa F811 # pragma: no cover
 		# type: (str) -> Optional[int]
 		pass
 
