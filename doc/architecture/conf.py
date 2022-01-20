@@ -23,7 +23,7 @@ release = "0.0.1"
 project = "Univention Corporate Server architecture {}".format(release)
 copyright = '{}, Univention GmbH'.format(date.today().year)
 author = 'Univention GmbH'
-language = 'en_US'
+language = 'en'
 
 html_title = project
 

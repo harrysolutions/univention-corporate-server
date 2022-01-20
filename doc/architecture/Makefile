@@ -12,8 +12,22 @@ BUILDDIR      = _build
 help:
 	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
+.PHONY: livehtml
 livehtml:
 	sphinx-autobuild "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+
+.PHONY: check
+check::
+	$(MAKE) linkcheck
+	$(MAKE) spelling
+
+.PHONY: install
+install::
+ifdef DESTDIR
+	sphinx-build -M html "$(SOURCEDIR)" "$(DESTDIR)"
+else
+	@echo "No DESTDIR environment variable defined. Skip."
+endif
 
 .PHONY: help Makefile
 
