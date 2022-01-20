@@ -140,7 +140,7 @@ def main():
 		print(_("Error: no DNs specified on command line"), file=sys.stderr)
 		sys.exit(2)
 
-	if options.output_name is not None and options.output_name != os.path.basename(options.output_name):
+	if options.output_name and options.output_name != os.path.basename(options.output_name):
 		parser.print_usage(sys.stderr)
 		print(_("Error: invalid output_name not allowed characters ['/'] "), file=sys.stderr)
 		sys.exit(2)
@@ -162,18 +162,18 @@ def main():
 	report = Report(lo, config=cfg)
 
 	try:
-		filename = report.create(options.module, options.report, args, options.output_dir)
+		filename = report.create(options.module, options.report, args)
 	except ReportError as exc:
 		print(_("Error: The %s report could not be created: %s") % (options.report, exc), file=sys.stderr)
 		sys.exit(1)
 
-	if options.output_dir is None:
+	if not options.output_dir:
 		options.output_dir = cfg.get_output_path() or '/tmp'
-	if options.output_name is None:
+	if not options.output_name:
 		options.output_name = filename.rsplit('/', 1)[1]
 	if not os.path.exists(options.output_dir):
 		os.makedirs(options.output_dir, exist_ok=True)
-	output_report = options.output_dir + "/" + options.output_name
+	output_report = os.path.join(options.output_dir, options.output_name)
 	filename = shutil.move(filename, output_report)
 
 	print(_('The %s has been created: %s') % (options.report, filename))
