@@ -46,7 +46,7 @@ class Report(object):
 		self.lo = lo
 		self.config = config or Config()
 
-	def create(self, module, report, objects, output=None, output_name=None):
+	def create(self, module, report, objects, output_dir):
 		"""Create a report of objects for the specified module in the specified report type format"""
 		connect(access=self.lo)
 		clear_cache()
@@ -66,9 +66,9 @@ class Report(object):
 		footer = self.config.get_footer(module, report, suffix)
 		doc = Document(template, header=header, footer=footer)
 
-		if output is None:
+		if output_dir is None:
 			output = self.config.get_output_path()
-		tmpfile = doc.create_source(objects, output, output_name)
+		tmpfile = doc.create_source(objects)
 		pdffile = tmpfile
 		func = {Document.TYPE_RML: doc.create_rml_pdf, Document.TYPE_LATEX: doc.create_pdf}.get(doc._type)
 		if func:

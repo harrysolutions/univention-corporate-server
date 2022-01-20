@@ -32,6 +32,9 @@
 # <https://www.gnu.org/licenses/>.
 
 from __future__ import print_function
+
+import os.path
+import shutil
 import sys
 import locale
 from optparse import OptionParser
@@ -115,10 +118,10 @@ def main():
 		dest='debug', default=0,
 		help='if given than debugging is activated and set to the specified level')
 	parser.add_option(
-		'-o', '--output-dir', action='store', dest='output',
+		'--output-dir', action='store',
 		help='location of the output report file')
 	parser.add_option(
-		'-f', '--file-name', action='store', dest='output_name',
+		'--output-name', action='store',
 		help='custom output report file name')
 
 	(options, args) = parser.parse_args()
@@ -137,6 +140,11 @@ def main():
 		print(_("Error: no DNs specified on command line"), file=sys.stderr)
 		sys.exit(2)
 
+	if options.output_name is not None and options.output_name != os.path.basename(options.output_name):
+		parser.print_usage(sys.stderr)
+		print(_("Error: invalid output_name not allowed characters ['/'] "), file=sys.stderr)
+		sys.exit(2)
+
 	# FIXME: why is start_tls=0 used here?
 	if options.user and options.password:
 		lo = univention.admin.uldap.access(host=options.server, base=options.base, binddn=options.user, bindpw=options.password, start_tls=0)
@@ -152,11 +160,21 @@ def main():
 			sys.exit(1)
 
 	report = Report(lo, config=cfg)
+
 	try:
-		filename = report.create(options.module, options.report, args, options.output, options.output_name)
+		filename = report.create(options.module, options.report, args, options.output_dir)
 	except ReportError as exc:
 		print(_("Error: The %s report could not be created: %s") % (options.report, exc), file=sys.stderr)
 		sys.exit(1)
+
+	if options.output_dir is None:
+		options.output_dir = cfg.get_output_path() or '/tmp'
+	if options.output_name is None:
+		options.output_name = filename.rsplit('/', 1)[1]
+	if not os.path.exists(options.output_dir):
+		os.makedirs(options.output_dir, exist_ok=True)
+	output_report = str(options.output_dir)+"/"+str(options.output_name)
+	filename = shutil.move(filename, output_report)
 
 	print(_('The %s has been created: %s') % (options.report, filename))
 
