@@ -1,0 +1,10 @@
+{% if theme_navbar_footer_text %}{% set theme_extra_navbar=theme_navbar_footer_text %}{% endif %} <!-- To handle the deprecated key -->
+{% if theme_extra_navbar %}
+<div class="navbar_extra_footer">
+  {{ theme_extra_navbar }}
+</div>
+{% endif %}
+
+<div class="navbar_extra_footer">
+    <p><a href='{{ pathto("ucs-architecture.pdf", 1)|e }}/../ucs-architecture.pdf' target='_blank'><i class='far fa-file-pdf'></i> Download as PDF</a></p>
+</div>
