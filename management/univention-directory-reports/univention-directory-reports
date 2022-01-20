@@ -173,7 +173,7 @@ def main():
 		options.output_name = filename.rsplit('/', 1)[1]
 	if not os.path.exists(options.output_dir):
 		os.makedirs(options.output_dir, exist_ok=True)
-	output_report = str(options.output_dir)+"/"+str(options.output_name)
+	output_report = options.output_dir + "/" + options.output_name
 	filename = shutil.move(filename, output_report)
 
 	print(_('The %s has been created: %s') % (options.report, filename))

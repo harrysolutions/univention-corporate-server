@@ -46,11 +46,10 @@ class Report(object):
 		self.lo = lo
 		self.config = config or Config()
 
-	def create(self, module, report, objects, output_dir):
+	def create(self, module, report, objects):
 		"""Create a report of objects for the specified module in the specified report type format"""
 		connect(access=self.lo)
 		clear_cache()
-
 		template = self.config.get_report(module, report)
 		if template is None:
 			if not module:
@@ -60,14 +59,10 @@ class Report(object):
 			if report:
 				raise ReportError(_('The report %r does not exists or is misconfigured.') % (report,))
 			raise ReportError(_('No %r report exists for the module %r.') % (report, module))
-
 		suffix = '.rml' if Document.get_type(template) == Document.TYPE_RML else '.tex'
 		header = self.config.get_header(module, report, suffix)
 		footer = self.config.get_footer(module, report, suffix)
 		doc = Document(template, header=header, footer=footer)
-
-		if output_dir is None:
-			output = self.config.get_output_path()
 		tmpfile = doc.create_source(objects)
 		pdffile = tmpfile
 		func = {Document.TYPE_RML: doc.create_rml_pdf, Document.TYPE_LATEX: doc.create_pdf}.get(doc._type)

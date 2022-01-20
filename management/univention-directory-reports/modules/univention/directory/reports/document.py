@@ -84,7 +84,7 @@ class Document(object):
 			if not os.path.isfile(filename):
 				raise ReportError(_("Configuration error: File %r could not be opened.") % (filename,))
 
-	def __create_tempfile(self ):
+	def __create_tempfile(self):
 		if self._type == Document.TYPE_LATEX:
 			suffix = '.src'
 		elif self._type == Document.TYPE_CSV:
