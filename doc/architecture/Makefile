@@ -24,7 +24,9 @@ check::
 .PHONY: install
 install::
 ifdef DESTDIR
-	sphinx-build -M html "$(SOURCEDIR)" "$(DESTDIR)"
+	$(MAKE) html BUILDDIR="$(DESTDIR)"
+	$(MAKE) latexpdf BUILDDIR="$(DESTDIR)"
+	cp "$(DESTDIR)"/latex/ucs-architecture.pdf "$(DESTDIR)"/html/
 else
 	@echo "No DESTDIR environment variable defined. Skip."
 endif
