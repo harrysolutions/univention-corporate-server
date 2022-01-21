@@ -1,4 +1,4 @@
-univention-ldap (16.0.7-8) unstable; urgency=medium
+univention-ldap (16.0.7-9) unstable; urgency=medium
 
   * Bug #54092: added krb5ValidStart to ..ldap-config.postinst and
     ldap_setup_index. Added advisory yaml. 
