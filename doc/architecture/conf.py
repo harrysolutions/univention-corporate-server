@@ -69,7 +69,7 @@ html_theme_options = {
 html_static_path = ['_static']
 
 
-html_last_updated_fmt = "%d. %b %Y at %H:%m (UTC%z)"
+html_last_updated_fmt = "%d. %b %Y at %H:%M (UTC%z)"
 
 # https://github.com/mgeier/sphinx-last-updated-by-git
 git_last_updated_timezone = 'Europe/Berlin'
