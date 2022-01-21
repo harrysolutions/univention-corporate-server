@@ -168,7 +168,7 @@ def main():
 		sys.exit(1)
 
 	if not options.output_dir:
-		options.output_dir = cfg.get_output_path() or '/tmp'
+		options.output_dir = cfg.get_output_dir() or '/tmp'
 	if not options.output_name:
 		options.output_name = filename.rsplit('/', 1)[1]
 	if not os.path.exists(options.output_dir):

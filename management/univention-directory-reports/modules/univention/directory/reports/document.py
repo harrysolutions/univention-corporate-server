@@ -91,8 +91,7 @@ class Document(object):
 			suffix = '.csv'
 		else:
 			suffix = self._template.rsplit('.', 1)[1]
-		report = 'univention-directory-reports-'
-		fd, filename = tempfile.mkstemp(suffix, report)
+		fd, filename = tempfile.mkstemp(suffix, 'univention-directory-reports-')
 		os.chmod(filename, 0o644)
 		os.close(fd)
 
