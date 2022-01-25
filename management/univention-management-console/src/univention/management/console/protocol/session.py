@@ -291,6 +291,7 @@ class ModuleProcess(object):
 
 
 class User(object):
+	"""Information about the authenticated user"""
 
 	__slots__ = ('session', 'username', 'password', 'user_dn', 'auth_type')
 
@@ -335,6 +336,7 @@ class User(object):
 
 
 class Session(object):
+	"""A interface to session data"""
 
 	__slots__ = ('session_id', 'ip', 'acls', 'user', 'processes', 'authenticated', 'timeout', '_')
 	__auth = AuthHandler()
@@ -390,6 +392,7 @@ class Session(object):
 
 
 class Resource(RequestHandler):
+	"""Base class for every UMC resource"""
 
 	def set_default_headers(self):
 		self.set_header('Server', 'UMC-Server/1.0')  # TODO:
@@ -706,6 +709,7 @@ class Resource(RequestHandler):
 
 
 class NewSession(Resource):
+	"""Drop all information from the current session - like a relogin"""
 
 	def get(self):
 		session = self.current_user
@@ -714,6 +718,7 @@ class NewSession(Resource):
 
 
 class Auth(Resource):
+	"""Authenticate the user via PAM - either via plain password or via SAML message"""
 
 	def parse_authorization(self):
 		return  # do not call super method, prevent basic auth
@@ -771,6 +776,7 @@ class Auth(Resource):
 
 
 class Modules(Resource):
+	"""Get a list of available modules"""
 
 	def prepare(self):
 		super(Modules, self).prepare()
@@ -862,6 +868,7 @@ class Modules(Resource):
 
 
 class Categories(Resource):
+	"""Get a list of available categories"""
 
 	def prepare(self):
 		super(Categories, self).prepare()
@@ -890,6 +897,11 @@ class Categories(Resource):
 
 
 class SetLocale(Resource):
+	"""Set the locale for the session.
+
+	.. deprecated:: 5.0
+		set language via `Accept-Language` HTTP header
+	"""
 
 	#@sanitize(locale=StringSanitizer(required=True))
 	def post(self, locale):
@@ -899,6 +911,7 @@ class SetLocale(Resource):
 
 
 class Upload(Resource):
+	"""Handle generic file upload which is not targeted for any module"""
 
 	def post(self):
 		"""Handles a file UPLOAD request, respond with a base64 representation of the content."""
@@ -918,6 +931,7 @@ class Upload(Resource):
 
 
 class IACLs(object):
+	"""Interface for UMC-ACL information"""
 
 	def __init__(self, session):
 		self.session = session
@@ -979,6 +993,7 @@ class IACLs(object):
 
 
 class Command(Resource):
+	"""Gateway for command/upload requests to UMC module processes"""
 
 	def error_handling(self, etype, exc, etraceback):
 		super(Command, self).error_handling(etype, exc, etraceback)
@@ -1092,6 +1107,7 @@ class Command(Resource):
 
 
 class Processes(object):
+	"""Interface for module processes"""
 
 	def __init__(self, session):
 		self.session = session
@@ -1201,6 +1217,7 @@ class Processes(object):
 
 
 class UCR(Resource):
+	"""Get UCR Variables matching a pattern"""
 
 	#@sanitize(StringSanitizer(required=True))
 	def get(self):
@@ -1219,6 +1236,7 @@ class UCR(Resource):
 
 
 class Meta(Resource):
+	"""Get Metainformation about the environment"""
 
 	META_JSON_PATH = '/var/www/univention/meta.json'
 
@@ -1284,6 +1302,13 @@ class Meta(Resource):
 
 
 class Info(Resource):
+	"""Get UCS and UMC version number and SSL validity
+
+		.. deprecated:: 5.0
+			if needed fetch UCR variables directly
+
+		TODO: move into meta?
+	"""
 
 	CHANGELOG_VERSION = re.compile(r'^[^(]*\(([^)]*)\).*')
 
@@ -1315,6 +1340,7 @@ class Info(Resource):
 
 
 class Hosts(Resource):
+	"""List all directory nodes in the domain"""
 
 	def get(self):
 		self.content_negotiation(self.get_hosts())
@@ -1338,6 +1364,11 @@ class Hosts(Resource):
 
 
 class Set(Resource):
+	"""Generic set
+
+	..deprecated:: 5.0
+		use the specific set paths
+	"""
 
 	@tornado.gen.coroutine
 	def post(self):
@@ -1362,6 +1393,7 @@ class Set(Resource):
 
 
 class SetPassword(Resource):
+	"""Change the password of the currently authenticated user"""
 
 	#@sanitize(password=DictSanitizer(dict(
 	#	password=StringSanitizer(required=True),
@@ -1391,6 +1423,7 @@ class SetPassword(Resource):
 
 
 class UserPreferences(Resource):
+	"""get user specific preferences like favorites"""
 
 	def get(self):
 		# fallback is an empty dict
@@ -1412,6 +1445,7 @@ class UserPreferences(Resource):
 
 
 class SetUserPreferences(UserPreferences):
+	"""set user specific preferences like favorites"""
 
 	def get(self):
 		return self.post()
