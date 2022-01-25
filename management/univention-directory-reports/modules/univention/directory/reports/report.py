@@ -64,7 +64,7 @@ class Report(object):
 		suffix = '.rml' if Document.get_type(template) == Document.TYPE_RML else '.tex'
 		header = self.config.get_header(module, report, suffix)
 		footer = self.config.get_footer(module, report, suffix)
-		
+
 		doc = Document(template, header=header, footer=footer)
 		tmpfile = doc.create_source(objects)
 		pdffile = tmpfile
