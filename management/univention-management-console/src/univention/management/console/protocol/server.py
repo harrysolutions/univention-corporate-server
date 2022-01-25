@@ -44,7 +44,6 @@ import logging
 import tempfile
 import traceback
 import threading
-import multiprocessing
 from argparse import ArgumentParser
 from six.moves.urllib_parse import urlparse, urlunsplit
 from six.moves.http_client import REQUEST_ENTITY_TOO_LARGE, LENGTH_REQUIRED, NOT_FOUND, BAD_REQUEST, UNAUTHORIZED, SERVICE_UNAVAILABLE
@@ -57,11 +56,11 @@ from tornado.httpserver import HTTPServer
 from tornado.netutil import bind_sockets
 import tornado
 from concurrent.futures import ThreadPoolExecutor
-# from multiprocessing import Manager
 
 from univention.management.console.protocol.session import Resource, Auth, Upload, Command, UCR, Meta, Info, Modules, Categories, UserPreferences, Hosts, Set, SetPassword, SetLocale, SetUserPreferences
 from univention.management.console.log import CORE, log_init, log_reopen
 from univention.management.console.config import ucr, get_int
+from univention.management.console.shared_memory import shared_memory
 
 from saml2 import BINDING_HTTP_POST, BINDING_HTTP_ARTIFACT, BINDING_HTTP_REDIRECT
 from saml2.client import Saml2Client
@@ -89,13 +88,6 @@ TEMPUPLOADDIR = '/var/tmp/univention-management-console-frontend'
 
 if 422 not in tornado.httputil.responses:
 	tornado.httputil.responses[422] = 'Unprocessable Entity'  # Python 2 is missing this status code
-
-# m = Manager()
-
-
-def SharedMemoryDict(*args, **kwargs):
-	return {}  # pass to enable
-	# return m.dict(*args, **kwargs)
 
 
 class NotFound(HTTPError):
@@ -420,7 +412,6 @@ class SAMLResource(Resource):
 
 	SP = None
 	identity_cache = '/var/cache/univention-management-console/saml.bdb'
-	state_cache = SharedMemoryDict()  # None
 	configfile = '/usr/share/univention-management-console/saml/sp.py'
 	idp_query_param = "IdpQuery"
 	bindings = [BINDING_HTTP_REDIRECT, BINDING_HTTP_POST, BINDING_HTTP_ARTIFACT]
@@ -450,7 +441,7 @@ class SamlACS(SAMLResource):
 		CORE.info('Reloading SAML service provider configuration')
 		sys.modules.pop(os.path.splitext(os.path.basename(cls.configfile))[0], None)
 		try:
-			cls.SP = Saml2Client(config_file=cls.configfile, identity_cache=cls.identity_cache, state_cache=cls.state_cache)
+			cls.SP = Saml2Client(config_file=cls.configfile, identity_cache=cls.identity_cache, state_cache=shared_memory.state_cache)
 			return True
 		except Exception:
 			CORE.warn('Startup of SAML2.0 service provider failed:\n%s' % (traceback.format_exc(),))
@@ -716,7 +707,6 @@ class Server(object):
 		)
 		self.options = self.parser.parse_args()
 		self._child_number = None
-		self._children = {}
 
 		# TODO? not really
 		# os.environ['LANG'] = locale.normalize(self.options.language)
@@ -740,7 +730,7 @@ class Server(object):
 		if self._child_number is not None:
 			return  # we are the child process
 		try:
-			children = list(self._children.items())
+			children = list(shared_memory.children.items())
 		except EnvironmentError:
 			children = []
 		for child, pid in children:
@@ -756,7 +746,8 @@ class Server(object):
 
 		sockets = bind_sockets(get_int('umc/http/port', 8090), ucr.get('umc/http/interface', '127.0.0.1'), backlog=get_int('umc/http/requestqueuesize', 100), reuse_port=True)
 		if self.options.processes != 1:
-			self._children = multiprocessing.Manager().dict()
+			shared_memory.start()
+
 			CORE.process('Starting with %r processes' % (self.options.processes,))
 			try:
 				self._child_number = tornado.process.fork_processes(self.options.processes, 0)
@@ -765,7 +756,7 @@ class Server(object):
 				os.kill(os.getpid(), signal.SIGTERM)
 				raise SystemExit(str(exc))
 			if self._child_number is not None:
-				self._children[self._child_number] = os.getpid()
+				shared_memory.children[self._child_number] = os.getpid()
 
 		application = Application(serve_traceback=ucr.is_true('umc/http/show_tracebacks', True))
 		server = HTTPServer(
