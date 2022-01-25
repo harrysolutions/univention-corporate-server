@@ -59,7 +59,6 @@ from .definitions import MODULE_ERR_INIT_FAILED, SUCCESS
 from univention.management.console.log import MODULE
 from univention.management.console.config import ucr, get_int
 from univention.management.console.error import BadRequest
-from univention.management.console.resources import TEMPUPLOADDIR
 
 from univention.lib.i18n import Translation
 
@@ -69,6 +68,8 @@ except ImportError:
 	pass
 
 _ = Translation('univention.management.console').translate
+
+TEMPUPLOADDIR = '/var/tmp/univention-management-console-frontend'
 
 
 class UploadManager(dict):

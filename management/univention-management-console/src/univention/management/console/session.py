@@ -52,7 +52,6 @@ from .ldap import get_machine_connection, reset_cache as reset_ldap_connection_c
 from .module import Manager as ModuleManager
 from .category import Manager as CategoryManager
 from univention.management.console.resource import Resource
-from univention.management.console.saml import SAMLResource
 
 try:
 	from time import monotonic
@@ -64,86 +63,6 @@ categoryManager = CategoryManager()
 _session_timeout = get_int('umc/http/session/timeout', 300)
 
 
-class UMCP_Dispatcher(object):
-
-	"""Dispatcher used to exchange the requests between CherryPy and UMC"""
-	sessions = {}
-
-
-class _User(object):
-	# TODO: merge with other user class
-
-	__slots__ = ('sessionid', 'username', 'password', 'saml', '_timeout', '_timeout_id')
-
-	def __init__(self, sessionid, username, password, saml=None):
-		self.sessionid = sessionid
-		self.username = username
-		self.password = password
-		self.saml = saml
-		self._timeout_id = None
-		self.reset_timeout()
-
-	def _session_timeout_timer(self):
-		session = UMCP_Dispatcher.sessions.get(self.sessionid)
-		if session and session._requestid2response_queue:
-			self._timeout = 1
-			ioloop = tornado.ioloop.IOLoop.current()
-			self._timeout_id = ioloop.call_later(1000, self._session_timeout_timer)
-			return
-
-		CORE.info('session %r timed out' % (self.sessionid,))
-		Resource.sessions.pop(self.sessionid, None)
-		self.on_logout()
-		return False
-
-	def reset_timeout(self):
-		self.disconnect_timer()
-		self._timeout = monotonic() + _session_timeout
-		ioloop = tornado.ioloop.IOLoop.current()
-		self._timeout_id = ioloop.call_later(int(self.session_end_time - monotonic()) * 1000, self._session_timeout_timer)
-
-	def disconnect_timer(self):
-		if self._timeout_id is not None:
-			ioloop = tornado.ioloop.IOLoop.current()
-			ioloop.remove_timeout(self._timeout_id)
-
-	def timed_out(self, now):
-		return self.session_end_time < now
-
-	@property
-	def session_end_time(self):
-		if self.is_saml_user() and self.saml.session_end_time:
-			return self.saml.session_end_time
-		return self._timeout
-
-	def is_saml_user(self):
-		# self.saml indicates that it was originally a
-		# saml user. but it may have upgraded and got a
-		# real password. the saml user object is still there,
-		# though
-		return self.password is None and self.saml
-
-	def on_logout(self):
-		self.disconnect_timer()
-		if self.saml:
-			SAMLResource.on_logout(self.saml.name_id)
-
-	def get_umc_password(self):
-		if self.is_saml_user():
-			return self.saml.message
-		else:
-			return self.password
-
-	def get_umc_auth_type(self):
-		if self.is_saml_user():
-			return "SAML"
-		else:
-			return None
-
-	def __repr__(self):
-		return '<User(%s, %s, %s)>' % (self.username, self.sessionid, self.saml is not None)
-
-
 class User(object):
 	"""Information about the authenticated user"""
 
@@ -153,7 +72,11 @@ class User(object):
 		self.session = session
 		self.username = None
 		self.password = None
+		self.auth_type = None
 		self.user_dn = None
+
+	def __repr__(self):
+		return '<User(%s, %s, %s)>' % (self.username, self.session.session_id, self.session.saml is not None)
 
 	def set_credentials(self, username, password, auth_type):
 		self.username = username
@@ -192,7 +115,7 @@ class User(object):
 class Session(object):
 	"""A interface to session data"""
 
-	__slots__ = ('session_id', 'ip', 'acls', 'user', 'processes', 'authenticated', 'timeout', '_')
+	__slots__ = ('session_id', 'ip', 'acls', 'user', 'saml', 'processes', 'authenticated', 'timeout', '_')
 	__auth = AuthHandler()
 	sessions = {}
 
@@ -222,10 +145,14 @@ class Session(object):
 		self.ip = None
 		self.authenticated = False
 		self.user = User(self)
+		self.saml = None
 		self.acls = IACLs(self)
 		self.processes = Processes(self)
 		self.timeout = None
 		self.reset_connection_timeout()
+
+	#	self._timeout_id = None
+	#	self.reset_timeout()
 
 	def renew(self):
 		CORE.info('Renewing session')
@@ -244,6 +171,71 @@ class Session(object):
 
 	def reset_connection_timeout(self):
 		self.timeout = SERVER_CONNECTION_TIMEOUT
+
+	def is_saml_user(self):
+		# self.saml indicates that it was originally a
+		# saml user. but it may have upgraded and got a
+		# real password. the saml user object is still there,
+		# though
+		return self.user.password is None and self.saml
+
+	def get_umc_password(self):
+		if self.is_saml_user():
+			return self.saml.message
+		else:
+			return self.user.password
+
+	def get_umc_auth_type(self):
+		if self.is_saml_user():
+			return "SAML"
+		else:
+			return None
+
+	def logout(self):
+		self.expire(self.session_id)
+		self.on_logout()
+
+	# FIXME: TAKEN FROM WEBSERVER. FIX ACCURATENESS
+
+	def _session_timeout_timer(self):
+		class UMCP_Dispatcher(object):
+			sessions = {}
+		session = UMCP_Dispatcher.sessions.get(self.sessionid)
+		if session and session._requestid2response_queue:
+			self._timeout = 1
+			ioloop = tornado.ioloop.IOLoop.current()
+			self._timeout_id = ioloop.call_later(1000, self._session_timeout_timer)
+			return
+
+		CORE.info('session %r timed out' % (self.sessionid,))
+		Resource.sessions.pop(self.sessionid, None)
+		self.on_logout()
+		return False
+
+	def reset_timeout(self):
+		self.disconnect_timer()
+		self._timeout = monotonic() + _session_timeout
+		ioloop = tornado.ioloop.IOLoop.current()
+		self._timeout_id = ioloop.call_later(int(self.session_end_time - monotonic()) * 1000, self._session_timeout_timer)
+
+	def disconnect_timer(self):
+		if self._timeout_id is not None:
+			ioloop = tornado.ioloop.IOLoop.current()
+			ioloop.remove_timeout(self._timeout_id)
+
+	def timed_out(self, now):
+		return self.session_end_time < now
+
+	@property
+	def session_end_time(self):
+		if self.is_saml_user() and self.saml.session_end_time:
+			return self.saml.session_end_time
+		return self._timeout
+
+	def on_logout(self):
+		self.disconnect_timer()
+		if self.saml:
+			self.saml.on_logout()
 
 
 class IACLs(object):

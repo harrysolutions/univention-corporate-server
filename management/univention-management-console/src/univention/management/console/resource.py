@@ -38,7 +38,7 @@ import datetime
 import tornado.gen
 from cherrypy.lib.httputil import valid_status  # FIXME: replace
 from tornado.web import HTTPError, RequestHandler
-from six.moves.http_client import REQUEST_ENTITY_TOO_LARGE, LENGTH_REQUIRED, NOT_FOUND, BAD_REQUEST, UNAUTHORIZED, SERVICE_UNAVAILABLE
+from six.moves.http_client import LENGTH_REQUIRED, UNAUTHORIZED
 
 import univention.debug as ud
 from univention.management.console.config import ucr
@@ -60,7 +60,7 @@ except ImportError:  # Python 2
 	unescape = html_parser.unescape
 	from cgi import escape
 
-REQUEST_ENTITY_TOO_LARGE, LENGTH_REQUIRED, NOT_FOUND, BAD_REQUEST, UNAUTHORIZED, SERVICE_UNAVAILABLE = int(REQUEST_ENTITY_TOO_LARGE), int(LENGTH_REQUIRED), int(NOT_FOUND), int(BAD_REQUEST), int(UNAUTHORIZED), int(SERVICE_UNAVAILABLE)
+LENGTH_REQUIRED, UNAUTHORIZED = int(LENGTH_REQUIRED), int(UNAUTHORIZED)
 
 traceback_pattern = re.compile(r'(Traceback.*most recent call|File.*line.*in.*\d)')
 
@@ -81,6 +81,23 @@ class Resource(RequestHandler):
 	def set_default_headers(self):
 		self.set_header('Server', 'UMC-Server/1.0')  # TODO:
 
+	@tornado.gen.coroutine
+	def prepare(self):
+		super(Resource, self).prepare()
+		self._proxy_uri()
+		self._ = self.locale.translate
+		self.request.content_negotiation_lang = 'json'
+		self.decode_request_arguments()
+		yield self.parse_authorization()
+		self.current_user.reset_connection_timeout()  # FIXME: order correct?
+		self.check_saml_session_validity()
+		self.bind_session_to_ip()
+
+	def check_saml_session_validity(self):
+		session = self.current_user
+		if session.saml is not None and session.timed_out(monotonic()):
+			raise HTTPError(UNAUTHORIZED)
+
 	def get_current_user(self):
 		session = Session.get(self.get_session_id())
 		session._ = self._
@@ -94,9 +111,23 @@ class Resource(RequestHandler):
 		# because it is an arbitrary value coming from the Client!
 		return self.get_cookie('UMCSessionId') or self.sessionidhash()
 
-	def get_session(self):
-		if self.current_user.session_id in Session.sessions:
-			return self.current_user
+	def create_sessionid(self, random=True):
+		if self.current_user.authenticated:
+			# if the user is already authenticated at the UMC-Server
+			# we must not change the session ID cookie as this might cause
+			# race conditions in the frontend during login, especially when logged in via SAML
+			return self.get_session_id()
+#		user = self.get_user()
+#		if user:
+#			# If the user was already authenticated at the UMC-Server
+#			# and the connection was lost (e.g. due to a module timeout)
+#			# we must not change the session ID cookie, as there might be multiple concurrent
+#			# requests from the same client during a new initialization of the connection to the UMC-Server.
+#			# They must cause that the session has one singleton connection!
+#			return user.sessionid
+		if random:
+			return str(uuid.uuid4())
+		return self.sessionidhash()
 
 	def sessionidhash(self):
 		session = u'%s%s%s%s' % (self.request.headers.get('Authorization', ''), self.request.headers.get('Accept-Language', ''), self.get_ip_address(), self.sessionidhash.salt)
@@ -106,17 +137,77 @@ class Resource(RequestHandler):
 
 	sessionidhash.salt = uuid.uuid4()
 
-	@tornado.gen.coroutine
-	def prepare(self):
-		super(Resource, self).prepare()
-		self._proxy_uri()
-		self._ = self.locale.translate
-		self.request.content_negotiation_lang = 'json'
-		self.decode_request_arguments()
-		yield self.parse_authorization()
-		self.current_user.reset_connection_timeout()
-		# self.check_saml_session_validity()
-		self.bind_session_to_ip()
+	def set_session(self, sessionid, username, password=None, saml=None):
+		self.current_user.user.username = username
+		self.current_user.user.password = password
+		if saml:
+			self.current_user.saml = saml
+		Session.put(sessionid, self.current_user)
+		self.set_cookies(('UMCSessionId', sessionid), ('UMCUsername', username))
+
+#		olduser = self.get_user()
+#
+#		if olduser:
+#			olduser.disconnect_timer()
+#		from .session import _User
+#		user = _User(sessionid, username, password, saml or olduser and olduser.saml)
+#
+#		self.sessions[sessionid] = user
+#		self.set_cookies(('UMCSessionId', sessionid), ('UMCUsername', username))
+#		return user
+
+	def expire_session(self):
+		self.current_user.logout()
+		self.set_cookies(('UMCSessionId', ''), expires=datetime.datetime.fromtimestamp(0))
+#		sessionid = self.get_session_id()
+#		if sessionid:
+#			user = self.sessions.pop(sessionid, None)
+#			if user:
+#				user.on_logout()
+#			Session.expire(sessionid)
+#		self.set_cookies(('UMCSessionId', ''), expires=datetime.datetime.fromtimestamp(0))
+
+#	def get_user(self):
+#		value = self.get_session_id()
+#		if not value or value not in self.sessions:
+#			return
+#		user = self.sessions[value]
+#		if user.timed_out(monotonic()):
+#			return
+#		return user
+
+	def set_cookies(self, *cookies, **kwargs):
+		# TODO: use expiration from session timeout?
+		# set the cookie once during successful authentication
+		if kwargs.get('expires'):
+			expires = kwargs.get('expires')
+		elif ucr.is_true('umc/http/enforce-session-cookie'):
+			# session cookie (will be deleted when browser closes)
+			expires = None
+		else:
+			# force expiration of cookie in 5 years from now on...
+			expires = (datetime.datetime.now() + datetime.timedelta(days=5 * 365))
+		for name, value in cookies:
+			name = self.suffixed_cookie_name(name)
+			if value is None:  # session.user.username might be None for unauthorized users
+				self.clear_cookie(name, path='/univention/')
+				continue
+			self.set_cookie(name, value, expires=expires, path='/univention/', secure=self.request.protocol == 'https' and ucr.is_true('umc/http/enforce-secure-cookie'), version=1)
+
+	def get_cookie(self, name):
+		cookie = self.request.cookies.get
+		morsel = cookie(self.suffixed_cookie_name(name)) or cookie(name)
+		if morsel:
+			return morsel.value
+
+	def suffixed_cookie_name(self, name):
+		host, _, port = self.request.headers.get('Host', '').partition(':')
+		if port:
+			try:
+				port = '-%d' % (int(port),)
+			except ValueError:
+				port = ''
+		return '%s%s' % (name, port)
 
 	def bind_session_to_ip(self):
 		ip = self.get_ip_address()
@@ -308,91 +399,3 @@ class Resource(RequestHandler):
 			langs.append((parts[0].strip(), score))
 		langs.sort(key=lambda pair: pair[1], reverse=True)
 		return langs
-
-	sessions = dict()  # FIXME: shared_memory.dict() !?
-
-	def suffixed_cookie_name(self, name):
-		host, _, port = self.request.headers.get('Host', '').partition(':')
-		if port:
-			try:
-				port = '-%d' % (int(port),)
-			except ValueError:
-				port = ''
-		return '%s%s' % (name, port)
-
-	def create_sessionid(self, random=True):
-		if self.get_session():
-			# if the user is already authenticated at the UMC-Server
-			# we must not change the session ID cookie as this might cause
-			# race conditions in the frontend during login, especially when logged in via SAML
-			return self.get_session_id()
-		user = self.get_user()
-		if user:
-			# If the user was already authenticated at the UMC-Server
-			# and the connection was lost (e.g. due to a module timeout)
-			# we must not change the session ID cookie, as there might be multiple concurrent
-			# requests from the same client during a new initialization of the connection to the UMC-Server.
-			# They must cause that the session has one singleton connection!
-			return user.sessionid
-		if random:
-			return str(uuid.uuid4())
-		return self.sessionidhash()
-
-	def check_saml_session_validity(self):
-		user = self.get_user()
-		if user and user.saml is not None and user.timed_out(monotonic()):
-			raise HTTPError(UNAUTHORIZED)
-
-	def set_cookies(self, *cookies, **kwargs):
-		# TODO: use expiration from session timeout?
-		# set the cookie once during successful authentication
-		if kwargs.get('expires'):
-			expires = kwargs.get('expires')
-		elif ucr.is_true('umc/http/enforce-session-cookie'):
-			# session cookie (will be deleted when browser closes)
-			expires = None
-		else:
-			# force expiration of cookie in 5 years from now on...
-			expires = (datetime.datetime.now() + datetime.timedelta(days=5 * 365))
-		for name, value in cookies:
-			name = self.suffixed_cookie_name(name)
-			if value is None:  # session.user.username might be None for unauthorized users
-				self.clear_cookie(name, path='/univention/')
-				continue
-			self.set_cookie(name, value, expires=expires, path='/univention/', secure=self.request.protocol == 'https' and ucr.is_true('umc/http/enforce-secure-cookie'), version=1)
-
-	def get_cookie(self, name):
-		cookie = self.request.cookies.get
-		morsel = cookie(self.suffixed_cookie_name(name)) or cookie(name)
-		if morsel:
-			return morsel.value
-
-	def set_session(self, sessionid, username, password=None, saml=None):
-		olduser = self.get_user()
-
-		if olduser:
-			olduser.disconnect_timer()
-		from .session import _User
-		user = _User(sessionid, username, password, saml or olduser and olduser.saml)
-
-		self.sessions[sessionid] = user
-		self.set_cookies(('UMCSessionId', sessionid), ('UMCUsername', username))
-		return user
-
-	def expire_session(self):
-		sessionid = self.get_session_id()
-		if sessionid:
-			user = self.sessions.pop(sessionid, None)
-			if user:
-				user.on_logout()
-			Session.expire(sessionid)
-			self.set_cookies(('UMCSessionId', ''), expires=datetime.datetime.fromtimestamp(0))
-
-	def get_user(self):
-		value = self.get_session_id()
-		if not value or value not in self.sessions:
-			return
-		user = self.sessions[value]
-		if user.timed_out(monotonic()):
-			return
-		return user

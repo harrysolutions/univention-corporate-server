@@ -59,7 +59,6 @@ from univention.lib.i18n import NullTranslation
 _ = NullTranslation('univention-management-console-frontend').translate
 
 pool = ThreadPoolExecutor(max_workers=get_int('umc/http/maxthreads', 35))
-TEMPUPLOADDIR = '/var/tmp/univention-management-console-frontend'
 
 
 class Application(TApplication):

@@ -75,7 +75,6 @@ try:
 except ImportError:
 	from monotonic import monotonic
 
-TEMPUPLOADDIR = '/var/tmp/univention-management-console-frontend'
 REQUEST_ENTITY_TOO_LARGE, LENGTH_REQUIRED, NOT_FOUND, BAD_REQUEST, UNAUTHORIZED, SERVICE_UNAVAILABLE = int(REQUEST_ENTITY_TOO_LARGE), int(LENGTH_REQUIRED), int(NOT_FOUND), int(BAD_REQUEST), int(UNAUTHORIZED), int(SERVICE_UNAVAILABLE)
 
 SessionHandler = None
@@ -274,8 +273,8 @@ class Logout(Resource):
 	"""Logout a user"""
 
 	def get(self, **kwargs):
-		user = self.get_user()
-		if user and user.saml is not None:
+		session = self.current_user
+		if session.saml is not None:
 			return self.redirect('/univention/saml/logout', status=303)
 		self.expire_session()
 		self.redirect(ucr.get('umc/logout/location') or '/univention/', status=303)
@@ -296,11 +295,11 @@ class SessionInfo(Resource):
 
 	def get(self):
 		info = {}
-		user = self.get_user()
-		if user is None:
+		session = self.current_user
+		if not session.authenticated:
 			raise HTTPError(int(UNAUTHORIZED))
-		info['username'] = user.username
-		info['auth_type'] = user.saml and 'SAML'
+		info['username'] = session.user.username
+		info['auth_type'] = session.get_umc_auth_type()  # prior: session.saml and 'SAML'
 		info['remaining'] = int(user.session_end_time - monotonic())
 		self.content_negotiation(info)
 
@@ -344,7 +343,7 @@ class Auth(Resource):
 	"""Authenticate the user via PAM - either via plain password or via SAML message"""
 
 	def parse_authorization(self):
-		return  # do not call super method, prevent basic auth
+		return  # do not call super method: prevent basic auth
 
 	@tornado.gen.coroutine
 	def post(self):
@@ -381,7 +380,6 @@ class Auth(Resource):
 		# create a sessionid if the user is not yet authenticated
 		sessionid = self.create_sessionid(True)
 		self.set_session(sessionid, session.user.username, password=session.user.password)
-		Session.put(sessionid, session)
 		self.set_status(result.status)
 		if result.message:
 			self.set_header('X-UMC-Message', json.dumps(result.message))
@@ -632,10 +630,12 @@ class Command(Resource):
 		headers['X-User-Dn'] = json.dumps(session.user.user_dn)
 		#headers['X-UMC-Flavor'] = None
 		# Forwarded=self.get_ip_address() ?
-		headers['Authorization'] = 'basic ' + base64.b64encode(('%s:%s' % (session.user.username, session.user.password)).encode('ISO8859-1')).decode('ASCII')
+		headers['Authorization'] = 'basic ' + base64.b64encode(('%s:%s' % (session.user.username, session.get_umc_password())).encode('ISO8859-1')).decode('ASCII')
 		headers['X-UMC-Method'] = methodname
 		headers['X-UMC-Command'] = umcp_command.upper()
-		#headers['X-UMC-SAML'] = None
+		auth_type = session.get_umc_auth_type()
+		if auth_type:
+			headers['X-UMC-AuthType'] = auth_type
 		return headers
 
 	@tornado.web.asynchronous
