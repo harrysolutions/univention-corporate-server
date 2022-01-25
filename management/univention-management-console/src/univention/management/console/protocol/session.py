@@ -487,6 +487,7 @@ class Resource(RequestHandler):
 		return json_
 
 	def decode_request_arguments(self):
+		# FIXME / TODO: regression: support query string ?flavor=foo for non-JSON
 		if self.request.headers.get('Content-Type', '').startswith('application/json'):  # normal (json) request
 			# get body and parse json
 			body = u'{}'

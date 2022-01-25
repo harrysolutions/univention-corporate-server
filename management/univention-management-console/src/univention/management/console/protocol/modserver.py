@@ -431,6 +431,7 @@ class Handler(RequestHandler):
 		return self.get(*args)
 
 	def _get_upload_arguments(self, req):
+		# FIXME / TODO: move into UMC-Server core?
 		options = []
 		body = {}
 
