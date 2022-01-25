@@ -62,9 +62,9 @@ if [ -x /etc/init.d/slapd ] &&
 then
 	if pidof slapd >/dev/null 2>/dev/null
 	then
-		invoke-rc.d slapd stop
+		deb-systemd-invoke stop slapd
 		/usr/share/univention-ldap/ldap_setup_index --add-eq krb5ValidStart
-		invoke-rc.d slapd start
+		deb-systemd-invoke start slapd
 	else
 		/usr/share/univention-ldap/ldap_setup_index --add-eq krb5ValidStart
 	fi
