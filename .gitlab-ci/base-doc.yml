@@ -18,14 +18,31 @@ stages:
 .sphinx-doc:
   stage: build
   image: $SPHINX_DOC
-  script:
-    - make -C $base html pdf linkcheck
-    - sphinx-build -M spelling "$base" "$base"/_build -W --keep-going
   artifacts:
     paths:
       - $base/_build
     reports:
       codequality: $base/codeclimate.json
+
+.sphinx-html:
+  extends: .sphinx-doc
+  script:
+    - make -C $base html
+
+.sphinx-pdf:
+  extends: .sphinx-doc
+  script:
+    - make -C $base latexpdf
+
+.sphinx-linkcheck:
+  extends: .sphinx-doc
+  script:
+    - make -C $base linkcheck
+
+.sphinx-spelling:
+  extends: .sphinx-doc
+  script:
+    - sphinx-build -M spelling "$base" "$base"/_build -W --keep-going
 
 # The child pipeline needs at minimum one job to run - otherwise the sub-pipeline fails
 webframe:

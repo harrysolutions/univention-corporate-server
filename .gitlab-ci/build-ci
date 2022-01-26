@@ -13,20 +13,66 @@ do
 	[ -f "$make" ] || continue
 	path="${make%/Makefile}"
 	pkg="${path##*/}"
-    extends_line='  extends: .doc'
 
     if echo $SPHINX_DOCS | grep -w "$pkg" > /dev/null; then
-        extends_line='  extends: .sphinx-doc'
+		echo
+		echo "build ${pkg} html:"
+		echo '  variables:'
+		echo "    base: $path"
+		echo '  extends: .sphinx-html'
+		echo '  rules:'
+		echo '    - if: "$CI_COMMIT_MESSAGE =~ /skip-doc/ || $pipeline =~ /skip-doc/"'
+		echo '      when: never'
+		echo '    - if: "$CI_COMMIT_MESSAGE =~ /force-doc/ || $pipeline =~ /force-doc/"'
+		echo '    - changes:'
+		echo "      - ${path}/**/*"
+
+		echo
+		echo "build ${pkg} pdf:"
+		echo '  variables:'
+		echo "    base: $path"
+		echo '  extends: .sphinx-pdf'
+		echo '  rules:'
+		echo '    - if: "$CI_COMMIT_MESSAGE =~ /skip-doc/ || $pipeline =~ /skip-doc/"'
+		echo '      when: never'
+		echo '    - if: "$CI_COMMIT_MESSAGE =~ /force-doc/ || $pipeline =~ /force-doc/"'
+		echo '    - changes:'
+		echo "      - ${path}/**/*"
+
+		echo
+		echo "build ${pkg} linkcheck:"
+		echo '  variables:'
+		echo "    base: $path"
+		echo '  extends: .sphinx-linkcheck'
+		echo '  rules:'
+		echo '    - if: "$CI_COMMIT_MESSAGE =~ /skip-doc/ || $pipeline =~ /skip-doc/"'
+		echo '      when: never'
+		echo '    - if: "$CI_COMMIT_MESSAGE =~ /force-doc/ || $pipeline =~ /force-doc/"'
+		echo '    - changes:'
+		echo "      - ${path}/**/*"
+
+		echo
+		echo "build ${pkg} spelling:"
+		echo '  variables:'
+		echo "    base: $path"
+		echo '  extends: .sphinx-spelling'
+		echo '  rules:'
+		echo '    - if: "$CI_COMMIT_MESSAGE =~ /skip-doc/ || $pipeline =~ /skip-doc/"'
+		echo '      when: never'
+		echo '    - if: "$CI_COMMIT_MESSAGE =~ /force-doc/ || $pipeline =~ /force-doc/"'
+		echo '    - changes:'
+		echo "      - ${path}/**/*"
+    else
+		echo
+		echo "build ${pkg}:"
+		echo '  variables:'
+		echo "    base: $path"
+		echo '  extends: .doc'
+		echo '  rules:'
+		echo '    - if: "$CI_COMMIT_MESSAGE =~ /skip-doc/ || $pipeline =~ /skip-doc/"'
+		echo '      when: never'
+		echo '    - if: "$CI_COMMIT_MESSAGE =~ /force-doc/ || $pipeline =~ /force-doc/"'
+		echo '    - changes:'
+		echo "      - ${path}/**/*"
     fi
-	echo
-	echo "build ${pkg}:"
-	echo '  variables:'
-	echo "    base: $path"
-	echo "$extends_line"
-	echo '  rules:'
-	echo '    - if: "$CI_COMMIT_MESSAGE =~ /skip-doc/ || $pipeline =~ /skip-doc/"'
-	echo '      when: never'
-	echo '    - if: "$CI_COMMIT_MESSAGE =~ /force-doc/ || $pipeline =~ /force-doc/"'
-	echo '    - changes:'
-	echo "      - ${path}/**/*"
 done
