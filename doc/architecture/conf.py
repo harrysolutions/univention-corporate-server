@@ -36,7 +36,7 @@ extensions = [
     "sphinx_copybutton",
     "sphinxcontrib.spelling",
     "univention_sphinx_extension",
-    "sphinx_last_updated_by_git",
+#    "sphinx_last_updated_by_git",
 ]
 
 copybutton_prompt_text = r"\$ |MariaDB \[\(none\)\]> |.*\$ |    -> |> "
