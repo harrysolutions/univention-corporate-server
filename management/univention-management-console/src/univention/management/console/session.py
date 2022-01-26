@@ -192,8 +192,8 @@ class Session(object):
 			return None
 
 	def logout(self):
-		self.expire(self.session_id)
 		self.on_logout()
+		self.expire(self.session_id)
 
 	# FIXME: TAKEN FROM WEBSERVER. FIX ACCURATENESS
 

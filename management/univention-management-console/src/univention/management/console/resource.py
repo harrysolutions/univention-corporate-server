@@ -117,14 +117,6 @@ class Resource(RequestHandler):
 			# we must not change the session ID cookie as this might cause
 			# race conditions in the frontend during login, especially when logged in via SAML
 			return self.get_session_id()
-#		user = self.get_user()
-#		if user:
-#			# If the user was already authenticated at the UMC-Server
-#			# and the connection was lost (e.g. due to a module timeout)
-#			# we must not change the session ID cookie, as there might be multiple concurrent
-#			# requests from the same client during a new initialization of the connection to the UMC-Server.
-#			# They must cause that the session has one singleton connection!
-#			return user.sessionid
 		if random:
 			return str(uuid.uuid4())
 		return self.sessionidhash()
@@ -145,36 +137,9 @@ class Resource(RequestHandler):
 		Session.put(sessionid, self.current_user)
 		self.set_cookies(('UMCSessionId', sessionid), ('UMCUsername', username))
 
-#		olduser = self.get_user()
-#
-#		if olduser:
-#			olduser.disconnect_timer()
-#		from .session import _User
-#		user = _User(sessionid, username, password, saml or olduser and olduser.saml)
-#
-#		self.sessions[sessionid] = user
-#		self.set_cookies(('UMCSessionId', sessionid), ('UMCUsername', username))
-#		return user
-
 	def expire_session(self):
 		self.current_user.logout()
 		self.set_cookies(('UMCSessionId', ''), expires=datetime.datetime.fromtimestamp(0))
-#		sessionid = self.get_session_id()
-#		if sessionid:
-#			user = self.sessions.pop(sessionid, None)
-#			if user:
-#				user.on_logout()
-#			Session.expire(sessionid)
-#		self.set_cookies(('UMCSessionId', ''), expires=datetime.datetime.fromtimestamp(0))
-
-#	def get_user(self):
-#		value = self.get_session_id()
-#		if not value or value not in self.sessions:
-#			return
-#		user = self.sessions[value]
-#		if user.timed_out(monotonic()):
-#			return
-#		return user
 
 	def set_cookies(self, *cookies, **kwargs):
 		# TODO: use expiration from session timeout?
