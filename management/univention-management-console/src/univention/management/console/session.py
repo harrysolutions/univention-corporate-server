@@ -51,7 +51,6 @@ from .error import ServiceUnavailable
 from .ldap import get_machine_connection, reset_cache as reset_ldap_connection_cache
 from .module import Manager as ModuleManager
 from .category import Manager as CategoryManager
-from univention.management.console.resource import Resource
 
 try:
 	from time import monotonic
@@ -115,7 +114,7 @@ class User(object):
 class Session(object):
 	"""A interface to session data"""
 
-	__slots__ = ('session_id', 'ip', 'acls', 'user', 'saml', 'processes', 'authenticated', 'timeout', '_')
+	__slots__ = ('session_id', 'ip', 'acls', 'user', 'saml', 'processes', 'authenticated', 'timeout', '_timeout', '_timeout_id', '_')
 	__auth = AuthHandler()
 	sessions = {}
 
@@ -149,6 +148,8 @@ class Session(object):
 		self.acls = IACLs(self)
 		self.processes = Processes(self)
 		self.timeout = None
+		self._timeout = None
+		self._timeout_id = None
 		self.reset_connection_timeout()
 
 	#	self._timeout_id = None
@@ -171,6 +172,7 @@ class Session(object):
 
 	def reset_connection_timeout(self):
 		self.timeout = SERVER_CONNECTION_TIMEOUT
+		self.reset_timeout()
 
 	def is_saml_user(self):
 		# self.saml indicates that it was originally a
@@ -208,6 +210,7 @@ class Session(object):
 			return
 
 		CORE.info('session %r timed out' % (self.sessionid,))
+		from univention.management.console.resource import Resource
 		Resource.sessions.pop(self.sessionid, None)
 		self.on_logout()
 		return False

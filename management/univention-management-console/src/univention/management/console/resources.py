@@ -66,7 +66,7 @@ from .locales import I18N, I18N_Manager
 from .config import MODULE_INACTIVITY_TIMER, MODULE_COMMAND, ucr, get_int
 from .error import UMC_Error, BadRequest, Forbidden, BadGateway
 from .ldap import reset_cache as reset_ldap_connection_cache
-from .session import Session, moduleManager, categoryManager
+from .session import moduleManager, categoryManager
 #from .modules.sanitizers import StringSanitizer, DictSanitizer
 #from .modules.decorators import sanitize, allow_get_request
 
@@ -300,7 +300,7 @@ class SessionInfo(Resource):
 			raise HTTPError(int(UNAUTHORIZED))
 		info['username'] = session.user.username
 		info['auth_type'] = session.get_umc_auth_type()  # prior: session.saml and 'SAML'
-		info['remaining'] = int(user.session_end_time - monotonic())
+		info['remaining'] = int(session.session_end_time - monotonic())
 		self.content_negotiation(info)
 
 	def post(self):
