@@ -28,10 +28,10 @@
 # /usr/share/common-licenses/AGPL-3; if not, see
 # <https://www.gnu.org/licenses/>.
 #
-import os
-from pwd import getpwnam
-from contextlib import contextmanager
 import json
+import os
+from contextlib import contextmanager
+from pwd import getpwnam
 
 from six.moves import dbm_gnu as gdbm
 

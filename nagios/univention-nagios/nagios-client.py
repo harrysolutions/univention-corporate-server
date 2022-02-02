@@ -32,10 +32,11 @@
 
 from __future__ import absolute_import
 
-import listener
 import os
 import re
 import stat
+
+import listener
 import univention.debug
 
 name = 'nagios-client'

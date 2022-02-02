@@ -30,8 +30,8 @@
 #
 
 import os
-from pwd import getpwnam
 from contextlib import contextmanager
+from pwd import getpwnam
 
 import lmdb
 

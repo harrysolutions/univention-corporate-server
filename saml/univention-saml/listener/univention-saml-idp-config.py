@@ -29,8 +29,8 @@
 # <https://www.gnu.org/licenses/>.
 
 from __future__ import absolute_import
-import listener
 
+import listener
 import univention.debug as ud
 from univention.config_registry import ConfigRegistry, handler_set, handler_unset
 

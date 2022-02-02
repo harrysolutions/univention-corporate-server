@@ -29,11 +29,11 @@
 # <https://www.gnu.org/licenses/>.
 #
 
-from contextlib import contextmanager
 import json
+from contextlib import contextmanager
 
-from univention.ldap_cache.log import log
 from univention.ldap_cache.cache import Shard
+from univention.ldap_cache.log import log
 
 CONFIG_FILE = '/usr/share/univention-group-membership-cache/shards.json'
 

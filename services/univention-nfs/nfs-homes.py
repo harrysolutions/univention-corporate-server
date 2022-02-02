@@ -33,11 +33,11 @@
 
 from __future__ import absolute_import
 
-import listener
-import univention.debug as ud
-
 import os
 import stat
+
+import listener
+import univention.debug as ud
 
 hostname = listener.configRegistry["hostname"]
 domainname = listener.configRegistry["domainname"]

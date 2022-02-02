@@ -32,17 +32,13 @@
 
 from __future__ import absolute_import
 
-from listener import SetUID, configRegistry
-import time
-import syslog
-import re
-import hashlib
 import base64
 import grp
-import subprocess
+import hashlib
 import os
 
 import univention.debug
+from listener import SetUID, configRegistry
 
 name = 'directory_logger'
 description = 'Log directory transactions'

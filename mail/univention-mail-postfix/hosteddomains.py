@@ -33,9 +33,10 @@
 
 from __future__ import absolute_import
 
+import re
+
 import listener
 import univention.config_registry
-import re
 import univention.debug
 
 name = 'hosteddomains'
