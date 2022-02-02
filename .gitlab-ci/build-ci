@@ -8,7 +8,7 @@ cat "${0%/*}/base-doc.yml"
 
 doc_job () { # <extends> [<suffix>]
 	echo
-	echo "build ${pkg} ${2:?suffix not set, for example html or pdf}:"
+	echo "build ${pkg}${2:+ }${2?suffix not set, for example html or pdf}:"
 	echo '  variables:'
 	echo "    base: $path"
 	echo "  extends: ${1:?extends}"
@@ -35,16 +35,6 @@ do
 		doc_job '.sphinx-spelling' spelling
 	elif [ -f "${path}/Makefile" ]
 	then
-		echo
-		echo "build ${pkg}:"
-		echo '  variables:'
-		echo "    base: $path"
-		echo '  extends: .doc'
-		echo '  rules:'
-		echo '    - if: "$CI_COMMIT_MESSAGE =~ /skip-doc/ || $pipeline =~ /skip-doc/"'
-		echo '      when: never'
-		echo '    - if: "$CI_COMMIT_MESSAGE =~ /force-doc/ || $pipeline =~ /force-doc/"'
-		echo '    - changes:'
-		echo "      - ${path}/**/*"
+		doc_job '.doc' ''
     fi
 done
