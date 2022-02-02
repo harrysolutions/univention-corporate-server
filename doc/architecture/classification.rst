@@ -60,3 +60,37 @@ packages:
 
 Additionally, Univention develops software responsible for UCS functionality
 that is distributed as Debian package.
+
+Identity management
+===================
+
+The most important functional pillar of UCS is identity management.
+
+Simplified, an IT environment consists of services and actors. Services offer
+functionality. Actors use functionality. Services can also behave as actors
+when they use the functionality of another service. Actors identify themselves
+against services to proof that they are eligible to use the functionality.
+
+The identification is done with *user accounts* the represent actors. User
+accounts typically have unique properties like for example username,
+password and email address. User accounts that digitally represent a person
+additionally have for example first name and last name.
+
+Imagine a small IT environment with 20 persons and five systems. Without a
+central identity management, an administrator would have to maintain the
+20 user accounts of the persons on each of the five systems that sums up to 100
+items to manage. The number of the items to manage is a linear function and
+increases with the number of systems that need to know user accounts.
+
+With a central identity management, there is one service that holds the
+information about the user accounts. All other services have access to that
+information. An administrator only has to maintain the user accounts on that
+system. The maintenance effort for the user accounts does not anymore multiply
+with the number of systems that need to know the user accounts. The slope of
+this linear function is less steep.
+
+Central identity management reduces the maintenance effort of user accounts for
+administrators.
+
+UCS is a product for central identity management for user accounts and the
+collection of user accounts in groups.
