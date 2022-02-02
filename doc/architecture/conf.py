@@ -33,14 +33,10 @@ html_title = project
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    "sphinx_copybutton",
     "sphinxcontrib.spelling",
     "univention_sphinx_extension",
 #    "sphinx_last_updated_by_git",
 ]
-
-copybutton_prompt_text = r"\$ |MariaDB \[\(none\)\]> |.*\$ |    -> |> "
-copybutton_prompt_is_regexp = True
 
 root_doc = "contents"
 
