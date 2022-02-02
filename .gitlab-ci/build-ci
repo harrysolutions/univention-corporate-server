@@ -26,15 +26,15 @@ do
 	path="${make%/Makefile}"
 	pkg="${path##*/}"
 
-    # Automatically detect Sphinx or Docbook
-    if [ -f "${path}/conf.py" ] # Use Sphinx's conf.py as hint to Sphinx
-    then
-        doc_job '.sphinx-html' html
-        doc_job '.sphinx-pdf' pdf
-        doc_job '.sphinx-linkcheck' linkcheck
-        doc_job '.sphinx-spelling' spelling
-    elif [ -f "${path}/Makefile" ]
-    then
+	# Automatically detect Sphinx or Docbook
+	if [ -f "${path}/conf.py" ] # Use Sphinx's conf.py as hint to Sphinx
+	then
+		doc_job '.sphinx-html' html
+		doc_job '.sphinx-pdf' pdf
+		doc_job '.sphinx-linkcheck' linkcheck
+		doc_job '.sphinx-spelling' spelling
+	elif [ -f "${path}/Makefile" ]
+	then
 		echo
 		echo "build ${pkg}:"
 		echo '  variables:'
