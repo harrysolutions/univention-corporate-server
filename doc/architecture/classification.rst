@@ -92,5 +92,23 @@ function is less steep.
 Central identity management reduces the maintenance effort of user accounts for
 administrators.
 
-UCS is a product for central identity management for user accounts and the
-collection of user accounts in groups.
+UCS is a product for central identity management for user accounts, their
+permissions and the collection of user accounts in groups.
+
+Infrastructure management
+=========================
+
+The second important functional pillar of UCS is IT infrastructure management.
+
+IT infrastructure is a set of IT components like computer and networking
+hardware, various software and network components. It is the foundation of an
+organization's technology system and drives the organization's success.
+
+UCS provides important infrastructure services to create an IT network
+infrastructure and connect IT components. UCS assigns addresses with DHCP and
+resolves hostnames with DNS, and much more. Administrators manage various IT
+components in their IT environment, like different kind of hosts, clients and
+printers.
+
+For more information about the different infrastructure services in UCS, see
+:ref:`services`.
