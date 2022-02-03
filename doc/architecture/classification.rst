@@ -66,12 +66,12 @@ Identity management
 
 The most important functional pillar of UCS is identity management.
 
-Simplified, an IT environment consists of services and actors. Services offer
-functionality. Actors use functionality. Services can also behave as actors
+Simplified, an IT environment consists of services and users. Services offer
+functionality. Users use functionality. Services can also behave as users
 when they use the functionality of another service. Actors identify themselves
 against services to proof that they are eligible to use the functionality.
 
-The identification is done with *user accounts* to represent actors. User
+The identification is done with *user accounts* to represent users. User
 accounts typically have properties like for example username, password and email
 address. User accounts that digitally represent a person additionally have for
 example first name and last name.
@@ -112,3 +112,29 @@ printers.
 
 For more information about the different infrastructure services in UCS, see
 :ref:`services`.
+
+Connection to the world around
+==============================
+
+As operating system offering many services, UCS interacts with its surrounding
+peers. Actors access the functionality of UCS through the following ways:
+
+Web
+   Persons like administrators and also end users use HTTPS to access the web
+   based UCS management system. In many cases other web-based services provided
+   by other software products delivered through apps are available through
+   HTTPS.
+
+Console
+   Persons with more technical background and the appropriate permissions can
+   access UCS through a console, either on a local terminal or through a remote
+   SSH session.
+
+Service protocols
+   As soon as users use any of the services that UCS offers, they access UCS
+   through one of those protocols. For example, a user's client requests
+   and IP address through DHCP and later asks for the IP address of the print
+   server.
+
+As a central system offering identity and infrastructure management UCS has to
+use numerous ways of connections.
