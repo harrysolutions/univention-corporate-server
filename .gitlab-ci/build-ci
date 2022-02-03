@@ -8,7 +8,7 @@ cat "${0%/*}/base-doc.yml"
 
 doc_job () { # <extends> [<suffix>]
 	echo
-	echo "build ${pkg}${2:+ }${2?suffix not set, for example html or pdf}:"
+	echo "build ${pkg}${2:+ "$2"}:"
 	echo '  variables:'
 	echo "    base: $path"
 	echo "  extends: ${1:?extends}"
@@ -35,6 +35,6 @@ do
 		doc_job '.sphinx-spelling' spelling
 	elif [ -f "${path}/Makefile" ]
 	then
-		doc_job '.doc' ''
+		doc_job '.doc'
     fi
 done
