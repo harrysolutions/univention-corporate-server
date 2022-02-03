@@ -35,7 +35,7 @@ html_title = project
 extensions = [
     "sphinxcontrib.spelling",
     "univention_sphinx_extension",
-#    "sphinx_last_updated_by_git",
+    "sphinx_last_updated_by_git",
 ]
 
 root_doc = "contents"
@@ -88,6 +88,8 @@ if "spelling" in sys.argv:
     spelling_lang = "en_US"
     spelling_show_suggestions = True
     spelling_word_list_filename = list()
+    # Warnings may come up by sphinx-last-updated-by-git. Shall be suppressed in spelling job
+    suppress_warnings = ['git.too_shallow']
 
 latex_engine = 'lualatex'
 latex_show_pagerefs = True
