@@ -112,3 +112,29 @@ printers.
 
 For more information about the different infrastructure services in UCS, see
 :ref:`services`.
+
+Connection to the world around
+==============================
+
+As operating system offering many services, UCS interacts with its surrounding
+peers. Actors access the functionality of UCS through the following ways:
+
+Web
+   Persons like administrators and also end users use HTTPS to access the web
+   based UCS management system. In many cases other web-based services provided
+   by other software products delivered through apps are available through
+   HTTPS.
+
+Console
+   Persons with more technical background and the appropriate permissions can
+   access UCS through a console, either on a local terminal or through a remote
+   SSH session.
+
+Service protocols
+   As soon as actors use any of the services that UCS offers, they access UCS
+   through one of those protocols. For example, a user's client requests
+   and IP address through DHCP and later asks for the IP address of the print
+   server.
+
+As a central system offering identity and infrastructure management UCS has to
+use numerous ways of connections.
