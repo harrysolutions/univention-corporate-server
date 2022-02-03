@@ -6,7 +6,7 @@ Classification in the IT world
 
 To comprehend the architecture of Univention Corporate Server (UCS) it is
 important to understand the origin and where it is located in the world of
-information technology.
+information technology (IT).
 
 Origin
 ======
@@ -38,7 +38,7 @@ data for installation. For more information on the deb file format, see `dev (fi
 format) at Wikipedia <w-deb-file-format_>`_ and `Basics of the Debian package
 management system in the Debian FAQ <debian-faq-pkg-basics_>`_.
 
-UCS like Debian uses a package manager, which is a collection of software tools
+UCS like Debian uses a package manager, which is a collection of software tools,
 to automate the process of installation, upgrade, configuration and removal of
 computer programs. In UCS the package manager is the advanced package tool
 (APT). For more information about APT, see the `Debian package management
@@ -71,23 +71,23 @@ functionality. Actors use functionality. Services can also behave as actors
 when they use the functionality of another service. Actors identify themselves
 against services to proof that they are eligible to use the functionality.
 
-The identification is done with *user accounts* the represent actors. User
-accounts typically have unique properties like for example username,
-password and email address. User accounts that digitally represent a person
-additionally have for example first name and last name.
+The identification is done with *user accounts* to represent actors. User
+accounts typically have properties like for example username, password and email
+address. User accounts that digitally represent a person additionally have for
+example first name and last name.
 
 Imagine a small IT environment with 20 persons and five systems. Without a
-central identity management, an administrator would have to maintain the
-20 user accounts of the persons on each of the five systems that sums up to 100
-items to manage. The number of the items to manage is a linear function and
+central identity management, an administrator would have to maintain 20 user
+accounts on each of the five systems. The management effort sums up to 100
+items. The number of items to manage is a linear function. The function's slope
 increases with the number of systems that need to know user accounts.
 
-With a central identity management, there is one service that holds the
-information about the user accounts. All other services have access to that
-information. An administrator only has to maintain the user accounts on that
-system. The maintenance effort for the user accounts does not anymore multiply
-with the number of systems that need to know the user accounts. The slope of
-this linear function is less steep.
+With a central identity management, one service holds the information about the
+user accounts. All other services have access to that information. An
+administrator only has to maintain the user accounts on that system. The
+maintenance effort for the user accounts does not anymore multiply with the
+number of systems that need to know the user accounts. The slope of this linear
+function is less steep.
 
 Central identity management reduces the maintenance effort of user accounts for
 administrators.
