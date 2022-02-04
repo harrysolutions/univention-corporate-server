@@ -25,6 +25,7 @@ def radius_auth(username, password):
 		'testing123',
 	])
 
+
 # Check if radius auth works with userpassword, when ssp is disabled
 def test_radius_auth_without_ssp(udm_session, rad_user):
 	dn, name, password = rad_user
