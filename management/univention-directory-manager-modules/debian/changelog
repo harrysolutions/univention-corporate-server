@@ -1,3 +1,9 @@
+univention-directory-manager-modules (15.0.12-31) unstable; urgency=medium
+
+  * REVERT ME: Bump version 
+
+ -- Julia Bremer <bremer@univention.de>  Mon, 07 Feb 2022 15:43:35 +0100
+
 univention-directory-manager-modules (15.0.11-29) unstable; urgency=medium
 
   * Bug #54029: Update French translation
