@@ -66,12 +66,12 @@ Identity management
 
 The most important functional pillar of UCS is identity management.
 
-Simplified, an IT environment consists of services and actors. Services offer
-functionality. Actors use functionality. Services can also behave as actors
+Simplified, an IT environment consists of services and users. Services offer
+functionality. Users use functionality. Services can also behave as users
 when they use the functionality of another service. Actors identify themselves
 against services to proof that they are eligible to use the functionality.
 
-The identification is done with *user accounts* to represent actors. User
+The identification is done with *user accounts* to represent users. User
 accounts typically have properties like for example username, password and email
 address. User accounts that digitally represent a person additionally have for
 example first name and last name.
@@ -131,7 +131,7 @@ Console
    SSH session.
 
 Service protocols
-   As soon as actors use any of the services that UCS offers, they access UCS
+   As soon as users use any of the services that UCS offers, they access UCS
    through one of those protocols. For example, a user's client requests
    and IP address through DHCP and later asks for the IP address of the print
    server.
