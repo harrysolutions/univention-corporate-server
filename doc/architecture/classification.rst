@@ -33,8 +33,8 @@ Packages
 --------
 
 Packages on UCS use the deb file format, which is a standard Unix *ar archive*
-including two *tar archives*.  One holds control information and the other the
-installable data. For more information on the deb file format, see `dev (file
+including two *tar archives*. One holds control information and the other the
+data for installation. For more information on the deb file format, see `dev (file
 format) at Wikipedia <w-deb-file-format_>`_ and `Basics of the Debian package
 management system in the Debian FAQ <debian-faq-pkg-basics_>`_.
 
