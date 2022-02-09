@@ -201,7 +201,7 @@ def password_config(scope=None):
 	scope = '/%s' % scope if scope else ''
 	return {
 		'digits': int(ucr.ucr['password%s/quality/credit/digits' % scope] or 6),
-		'lower':  int(ucr.ucr['password%s/quality/credit/lower' % scope] or 6),
+		'lower': int(ucr.ucr['password%s/quality/credit/lower' % scope] or 6),
 		'other': int(ucr.ucr['password%s/quality/credit/other' % scope] or 0),
 		'upper': int(ucr.ucr['password%s/quality/credit/upper' % scope] or 6),
 		'forbidden': ucr.ucr['password%s/quality/forbidden/chars' % scope] or ('0Ol1I' if scope else ''),

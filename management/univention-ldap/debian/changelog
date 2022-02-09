@@ -1,4 +1,4 @@
-univention-ldap (16.0.7-16) unstable; urgency=medium
+univention-ldap (16.0.7-17) unstable; urgency=medium
 
   * REVERT BEFORE MERGE: Increase version number
 

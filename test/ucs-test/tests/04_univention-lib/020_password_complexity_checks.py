@@ -345,7 +345,8 @@ def match_password_complexity(cfg, password):
 	uppercase = stats['upper']
 	forbidden = stats['forbidden']
 
-	return 0 == forbidden and digits >= cfg['digits'] and lowercase >= cfg['lower'] and special >= cfg['other'] and uppercase >=  cfg['upper']
+	return 0 == forbidden and digits >= cfg['digits'] and lowercase >= cfg['lower'] and special >= cfg['other'] and uppercase >= cfg['upper']
+
 
 class TestPasswordConfigDefaults(object):
 

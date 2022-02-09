@@ -1,4 +1,4 @@
-univention-python (13.0.2-4) unstable; urgency=medium
+univention-python (13.0.3-8) unstable; urgency=medium
 
   * Bug #53102: introduce _ldap_pre_rename(newdn) and
     _ldap_post_rename(olddn)
