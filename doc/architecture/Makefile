@@ -16,21 +16,6 @@ help:
 livehtml:
 	sphinx-autobuild "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
-.PHONY: check
-check::
-	$(MAKE) linkcheck
-	$(MAKE) spelling
-
-.PHONY: install
-install::
-ifdef DESTDIR
-	$(MAKE) html BUILDDIR="$(DESTDIR)"
-	$(MAKE) latexpdf BUILDDIR="$(DESTDIR)"
-	cp "$(DESTDIR)"/latex/ucs-architecture.pdf "$(DESTDIR)"/html/
-else
-	@echo "No DESTDIR environment variable defined. Skip."
-endif
-
 .PHONY: help Makefile
 
 # Catch-all target: route all unknown targets to Sphinx using the new
