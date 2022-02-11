@@ -11,7 +11,7 @@ Concepts
    domain
    replication
    role
-   policy
+   permission
    certificates
 
 Univention Corporate Server (UCS) unites numerous concepts to support
