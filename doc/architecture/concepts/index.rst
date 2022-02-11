@@ -23,7 +23,7 @@ The following concepts address identity management:
 * :ref:`concept-domain`
 * :ref:`concept-replication`
 * :ref:`concept-role`
-* :ref:`concept-policy`
+* :ref:`concept-permission`
 
 The :ref:`certificate concept <concept-certificates>` explains how UCS handles
 the certificate infrastructure in general and therefore relates to
