@@ -4,7 +4,7 @@
 Introduction
 ************
 
-Welcome to the architecture of Univention Corporate Server (UCS).
+Welcome to the architecture documentation of Univention Corporate Server (UCS).
 
 This document is for consultants, administrators, solution architects, software
 developers and system engineers. It describes the technical architecture of UCS

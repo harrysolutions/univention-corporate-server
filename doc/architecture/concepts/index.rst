@@ -26,5 +26,5 @@ The following concepts address identity management:
 * :ref:`concept-permission`
 
 The :ref:`certificate concept <concept-certificates>` explains how UCS handles
-the certificate infrastructure in general and therefore relates to
-infrastructure management.
+the certificate infrastructure in general and relates to infrastructure
+management.
