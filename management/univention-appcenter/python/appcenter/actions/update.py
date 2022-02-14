@@ -202,7 +202,8 @@ class Update(UniventionAppAction):
 					self.warn('Downloading the App archive via zsync failed. Falling back to download it directly.')
 					self.warn('For better performance, try to make zsync work for "%s". The error may be caused by a proxy altering HTTP requests' % all_tar_url)
 					self._download_files(app_cache, ['all.tar.gz'])
-					tgz_file = os.path.join(cache_dir, 'all.tar.gz')
+					# files are always downloaded with their filename prepended by '.'
+					tgz_file = os.path.join(cache_dir, '.all.tar.gz')
 					self._uncompress_archive(app_cache, tgz_file)
 
 			try:
