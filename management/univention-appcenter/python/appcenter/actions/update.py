@@ -189,7 +189,9 @@ class Update(UniventionAppAction):
 			appcenter_host = app_cache.get_server()
 			if appcenter_host.startswith('https'):
 				appcenter_host = 'http://%s' % appcenter_host[8:]
-			all_tar_file = os.path.join(app_cache.get_cache_dir(), '.all.tar')
+
+			cache_dir = app_cache.get_cache_dir()
+			all_tar_file = os.path.join(cache_dir, '.all.tar')
 			all_tar_url = '%s/meta-inf/%s/all.tar.zsync' % (appcenter_host, app_cache.get_ucs_version())
 			self.log('Downloading "%s"...' % all_tar_url)
 			cwd = os.getcwd()
@@ -202,7 +204,7 @@ class Update(UniventionAppAction):
 					self.warn('Downloading the App archive via zsync failed. Falling back to download it directly.')
 					self.warn('For better performance, try to make zsync work for "%s". The error may be caused by a proxy altering HTTP requests' % all_tar_url)
 					self._download_files(app_cache, ['all.tar.gz'])
-					self._uncompress_archive(app_cache, os.path.join(app_cache.get_cache_dir(), '.all.tar.gz'))
+					self._uncompress_archive(app_cache, os.path.join(cache_dir, '.all.tar.gz'))
 			finally:
 				os.chdir(cwd)
 			try:
@@ -296,14 +298,14 @@ class Update(UniventionAppAction):
 	def _extract_archive(self, app_cache):
 		# type: (AppCenterCache) -> None
 		cache_dir = app_cache.get_cache_dir()
-		self.debug('Extracting archive in %s' % app_cache.get_cache_dir())
+		self.debug('Extracting archive in %s' % cache_dir)
 		self._purge_old_cache(cache_dir)
-		all_tar_file = os.path.join(app_cache.get_cache_dir(), '.all.tar')
+		all_tar_file = os.path.join(cache_dir, '.all.tar')
 		self.debug('Unpacking %s...' % all_tar_file)
-		if self._subprocess(['tar', '-C', app_cache.get_cache_dir(), '-xf', all_tar_file]).returncode:
+		if self._subprocess(['tar', '-C', cache_dir, '-xf', all_tar_file]).returncode:
 			raise UpdateUnpackArchiveFailed(all_tar_file)
 		# make sure cache dir is available for everybody
-		os.chmod(app_cache.get_cache_dir(), 0o755)
+		os.chmod(cache_dir, 0o755)
 		# `touch all_tar_file` to get a new cache in case it was created in between extraction
 		os.utime(all_tar_file, None)
 
