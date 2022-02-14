@@ -281,7 +281,9 @@ class Update(UniventionAppAction):
 			# we already have a cache. our archive is just outdated...
 			return False
 		self.log('Filling the App Center file cache from our local archive %s!' % local_archive)
-		return self._uncompress_archive(app_cache, local_archive)
+		if not self._uncompress_archive(app_cache, local_archive):
+			return False
+		return self._extract_archive(app_cache)
 
 	def _uncompress_archive(self, app_cache, local_archive):
 		# type: (AppCenterCache, str) -> bool
@@ -294,7 +296,6 @@ class Update(UniventionAppAction):
 			self.warn('Error while reading %s: %s' % (local_archive, exc))
 			return False
 		else:
-			self._extract_archive(app_cache)
 			return True
 
 	def _extract_archive(self, app_cache):
