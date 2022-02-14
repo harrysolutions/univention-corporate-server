@@ -22,17 +22,24 @@ The first, high level :ref:`classifies UCS in the known IT world
 <classification>` and describes the :ref:`concepts <concepts>`. This view helps
 readers to understand the principles of UCS.
 
-The second, medium level is for administrators and solution architects. It
-covers the :ref:`product components <product-components>` and the :ref:`numerous
-services <services>` UCS offers to IT infrastructures.  Software developers and
-system engineers get an overview of the technical parts.  A general
-understanding of the mentioned protocols is beneficial for understanding.
+.. TODO : Enable the references, once the sections are written:
+   """covers the :ref:`product components <product-components>` and the :ref:`numerous
+   services <services>` UCS offers to IT infrastructures.  Software developers and"""
 
-The third, low level is about the :ref:`libraries <libraries>`, :ref:`internal
-systems and storage <systems-storage>`. It describes the pieces a software
-developer and system engineer needs to know to contribute to UCS. General
-knowledge of software architecture and software engineering are helpful at this
-level.
+The second, medium level is for administrators and solution architects. It
+covers the product components and the numerous services UCS offers to IT
+infrastructures. Software developers and system engineers get an overview of
+the technical parts. A general understanding of the mentioned protocols is
+beneficial for understanding.
+
+.. TODO : Enable the references, once the sections are written:
+   """The third, low level is about the :ref:`libraries <libraries>`, :ref:`internal
+   systems and storage <systems-storage>`. It describes the pieces a software"""
+
+The third, low level is about the libraries, internal systems and storage. It
+describes the pieces a software developer and system engineer needs to know to
+contribute to UCS. General knowledge of software architecture and software
+engineering are helpful at this level.
 
 Learning objectives
 ===================

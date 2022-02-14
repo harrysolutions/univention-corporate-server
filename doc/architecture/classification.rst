@@ -116,8 +116,9 @@ DHCP and resolves hostnames with DNS, and much more. Administrators manage
 various IT components in their IT environment, like different kind of hosts,
 clients and printers.
 
-For more information about the different infrastructure services in UCS, see
-:ref:`services`.
+.. TODO  Enable, once the services section is written.
+   """For more information about the different infrastructure services in UCS, see
+   :ref:`services`."""
 
 Connection to the world around
 ==============================
