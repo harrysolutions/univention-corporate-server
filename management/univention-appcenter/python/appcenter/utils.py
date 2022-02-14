@@ -46,7 +46,7 @@ import ssl
 from hashlib import md5, sha256
 import socket
 from locale import getlocale
-from lgging import Logger  # noqa F401
+from logging import Logger  # noqa F401
 from typing import TYPE_CHECKING, Any, Container, Dict, Iterable, List, Mapping, Optional, Sequence, Text, Tuple, Type, TypeVar, Union  # noqa F401
 
 from six.moves.configparser import RawConfigParser, ParsingError
