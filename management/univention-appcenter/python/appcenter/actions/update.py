@@ -303,7 +303,7 @@ class Update(UniventionAppAction):
 		self._purge_old_cache(cache_dir)
 		tmp_file = os.path.join(cache_dir, '.tmp.tar')
 		self.debug('Unpacking %s...' % tmp_file)
-		if self._subprocess(['tar', '-C', cache_dir, '-x', '-f', tmp__file]).returncode:
+		if self._subprocess(['tar', '-C', cache_dir, '-x', '-f', tmp_file]).returncode:
 			raise UpdateUnpackArchiveFailed(tmp_file)
 		# make sure cache dir is available for everybody
 		os.chmod(cache_dir, 0o755)
@@ -311,12 +311,12 @@ class Update(UniventionAppAction):
 		os.utime(tmp_file, None)
 		# Rename temporary to final file name
 		all_tar_file = os.path.join(cache_dir, '.all.tar')
-		os.rename(tmp__file, all_tar_file)
+		os.rename(tmp_file, all_tar_file)
 
 	def _purge_old_cache(self, cache_dir):
 		# type: (str) -> None
 		self.debug('Removing old files...')
-		for fname in glob(os.path.join(get_cache, '*')):
+		for fname in glob(os.path.join(cache_dir, '*')):
 			try:
 				os.unlink(fname)
 			except EnvironmentError as exc:
