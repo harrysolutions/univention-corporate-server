@@ -195,10 +195,7 @@ class Update(UniventionAppAction):
 			all_tar_file = os.path.join(cache_dir, '.all.tar')
 			all_tar_url = '%s/meta-inf/%s/all.tar.zsync' % (appcenter_host, app_cache.get_ucs_version())
 			self.log('Downloading "%s"...' % all_tar_url)
-			cwd = os.getcwd()
-			os.chdir(os.path.dirname(all_tar_file))
-			try:
-				if self._subprocess(['zsync', all_tar_url, '-q', '-o', tmp_file, '-i', all_tar_file]).returncode:
+			if self._subprocess(['zsync', all_tar_url, '-q', '-o', tmp_file, '-i', all_tar_file], cwd=cache_dir).returncode:
 					# fallback: download all.tar.gz without zsync. some proxys have difficulties with it, including:
 					#   * Range requests are not supported
 					#   * HTTP requests are altered
@@ -207,8 +204,7 @@ class Update(UniventionAppAction):
 					self._download_files(app_cache, ['all.tar.gz'])
 					tgz_file = os.path.join(cache_dir, 'all.tar.gz')
 					self._uncompress_archive(app_cache, tgz_file)
-			finally:
-				os.chdir(cwd)
+
 			try:
 				self._verify_file(tmp_file)
 			except UpdateSignatureVerificationFailed:
