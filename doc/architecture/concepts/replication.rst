@@ -6,7 +6,7 @@ Replication concept
 The replication concept ensures the availability and consistency of the central
 domain database and contributes to its scalability. It is necessary to keep the
 domain data synchronized across all domain controllers because more than one domain
-controller can have a copy of the central database. For example single domain
+controller can have a copy of the central database. For example domain
 controllers can get disconnected or need to shutdown for maintenance.
 
 Univention Corporate Server (UCS) implements the replication concept. The first
@@ -33,3 +33,14 @@ controllers:
 * Information about systems
 * Information about printers
 * Information about file shares
+
+The domain replication in UCS also ensures that the affect UCS systems run
+follow-up actions once the changes are replicated. The following example shows
+the follow-up actions for a new file share:
+
+#. An administrator creates a new file share.
+#. The domain database stores a new object about the new file share.
+#. The replication synchronizes this information to all domain controllers.
+#. The responsible domain controller updates its service configuration about
+   local file shares.
+#. The file share service offers the new share to users.

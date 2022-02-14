@@ -10,10 +10,11 @@ more information see the `Wikipedia article Certificate authority
 <w-certificate-authority_>`_.
 
 UCS uses Transport Layer Security (TLS). The UCS Primary Directory Node creates
-the CA on the behalf of the domain during its installation and signs
-certificates for other systems that join the domain. All certificates have an
-expiration date. The Primary Directory Node regularly copies all CA certificates
-to the Backup Directory Nodes in the domain.
+the CA on behalf of the domain during its installation and signs certificates
+for other systems that join the domain. All certificates have an expiration
+date. The Primary Directory Node repeatedly copies all CA certificates to the
+Backup Directory Nodes in the domain to allow administrators to promote one of
+them a Primary Directory Node any time, if needed.
 
 The domain systems use the certificates for secure communication between each
 other over the computer network, for example for domain database replication and

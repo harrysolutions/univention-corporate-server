@@ -4,23 +4,25 @@ Permission concept
 ==================
 
 The permission concept in Univention Corporate Server (UCS) specifies who can
-read and write domain data. Permissions apply to objects like users and systems
-alike. Policies assign custom permissions to objects. UCS applies default
-permissions for systems and pre-defined users and groups.
+read and write domain data. Permissions apply to objects in the domain database
+like users and systems alike. Policies assign custom permissions to objects. UCS
+applies default permissions for systems and pre-defined users and groups.
 
 System roles
 ------------
 
-Only UCS systems in the system role Primary Directory Node can write data to the
-domain database. All other system roles have read-only access. Nevertheless,
-write operations happen on the Primary Directory Node on behalf of other systems
-or users, for example a new UCS system joins the domain or an administrator
-installs an app.
+UCS system roles imply certain permissions on domain data. Only the Primary
+Directory Node can write data to the domain database. All other system roles
+have read-only access. Nevertheless, write operations happen on the Primary
+Directory Node on behalf of other systems or users. For example, when a new UCS
+system joins the domain or an administrator installs an app write operations run
+on the Primary Directory Node.
 
 Administrator and root
 ----------------------
 
-A UCS system knows two administrative user accounts: *Administrator* and *root*.
+Some user accounts also have implicit permissions on domain data and systems. A
+UCS system knows two administrative user accounts: *Administrator* and *root*.
 
 Administrator
    The user account *Administrator* is the first domain user and has all domain
@@ -32,26 +34,27 @@ Administrator
    during installation.
 
    Think of *Administrator* as the primary administrative account for the UCS
-   domain.
+   **domain**.
 
 root
    The user account *root* is the superuser on the local UCS system and has the
    user ID of ``0``. It has all permissions and is equivalent to the *root*
    account known from other GNU Linux systems.
 
-   The *root* account is defined and the password set during installation of
+   The *root* account is defined and the password is set during installation of
    every UCS system. The account is only for the local UCS system. On other UCS
-   systems administrators should of course define other passwords for the *root*
-   account.
+   systems administrators should—of course—define different passwords for the
+   *root* account.
 
-   Think of *root* as the primary administrative account for the local UCS
+   Think of *root* as the primary administrative account for the **local** UCS
    system.
 
 Domain users and admins
 -----------------------
 
-UCS has two default user groups in the domain that differ fundamentally: *Domain
-Users* and *Domain Admins*.
+To simplify the assignment of certain user permissions, UCS has two default user
+groups in the domain that differ fundamentally: *Domain Users* and *Domain
+Admins*.
 
 Domain Users
    UCS assigns every user to the user group *Domain Users* per default. The
@@ -64,9 +67,11 @@ Domain Admins
    UCS creates one user account called *Administrator* during the installation
    of the first UCS system (Primary Directory Node) in a domain. It is the first
    user account and has all permissions for the domain. The *Administrator*
-   user account is member of the *Domain Admins* group. Users in *Domain Admins*
-   group have all domain permissions. To join a UCS system to the domain
-   administrators need a user account in the group *Domain Admins*.
+   user account is member of the *Domain Admins* group.
+
+   Users in *Domain Admins* group have all domain permissions just like the
+   *Administrator* account. To join a UCS system to the domain, administrators
+   need a user account in the group *Domain Admins*.
 
 Machine account
 ---------------
@@ -86,6 +91,9 @@ domain:
 
 Policies
 --------
+
+In addition to the permissions defined for system roles and pre-defined groups,
+UCS offers policies for more fine-grained control on administrative settings.
 
 Policies are administrative settings to help administrators with infrastructure
 management that can be assigned to objects in the domain database. Policies use
