@@ -295,13 +295,9 @@ class Update(UniventionAppAction):
 
 	def _extract_archive(self, app_cache):
 		# type: (AppCenterCache) -> None
+		cache_dir = app_cache.get_cache_dir()
 		self.debug('Extracting archive in %s' % app_cache.get_cache_dir())
-		self.debug('Removing old files...')
-		for fname in glob(os.path.join(app_cache.get_cache_dir(), '*')):
-			try:
-				os.unlink(fname)
-			except EnvironmentError as exc:
-				self.warn('Cannot delete %s: %s' % (fname, exc))
+		self._purge_old_cache(cache_dir)
 		all_tar_file = os.path.join(app_cache.get_cache_dir(), '.all.tar')
 		self.debug('Unpacking %s...' % all_tar_file)
 		if self._subprocess(['tar', '-C', app_cache.get_cache_dir(), '-xf', all_tar_file]).returncode:
@@ -310,3 +306,12 @@ class Update(UniventionAppAction):
 		os.chmod(app_cache.get_cache_dir(), 0o755)
 		# `touch all_tar_file` to get a new cache in case it was created in between extraction
 		os.utime(all_tar_file, None)
+
+	def _purge_old_cache(self, cache_dir):
+		# type: (str) -> None
+		self.debug('Removing old files...')
+		for fname in glob(os.path.join(get_cache, '*')):
+			try:
+				os.unlink(fname)
+			except EnvironmentError as exc:
+				self.warn('Cannot delete %s: %s' % (fname, exc))
