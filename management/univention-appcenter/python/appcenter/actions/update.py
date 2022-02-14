@@ -282,12 +282,13 @@ class Update(UniventionAppAction):
 		return self._extract_archive(app_cache)
 
 	def _uncompress_archive(self, app_cache, local_archive):
+		"""`gunzip` in Python"""
 		# type: (AppCenterCache, str) -> bool
 		try:
 			with gzip_open(local_archive, 'rb') as zipped_file:
 				archive_content = zipped_file.read()
-				with open(os.path.join(app_cache.get_cache_dir(), '.tmp.tar'), 'wb') as extracted_file:
-					extracted_file.write(archive_content)
+			with open(os.path.join(app_cache.get_cache_dir(), '.tmp.tar'), 'wb') as extracted_file:
+				extracted_file.write(archive_content)
 		except (zlib.error, EnvironmentError) as exc:
 			self.warn('Error while reading %s: %s' % (local_archive, exc))
 			return False
