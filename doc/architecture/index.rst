@@ -10,6 +10,11 @@ This document is for consultants, administrators, solution architects, software
 developers and system engineers. It describes the technical architecture of UCS
 on three different detail levels.
 
+
+The document does not cover descriptions about how to use UCS or parts of the
+product. For instructions about how to install and use UCS, see the `UCS manual
+<univention-ucs-manual_>`_.
+
 .. TODO Remove this sentence once the whole document is done.
 
 The document is released iteratively after each part is finished. The beginning
