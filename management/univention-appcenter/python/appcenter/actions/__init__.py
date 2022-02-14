@@ -241,13 +241,13 @@ class UniventionAppAction(with_metaclass(UniventionAppActionMeta, object)):
 
 		return process.returncode == 0
 
-	def _subprocess(self, args, logger=None, env=None):
-		# type: (Sequence[str], Optional[logging.Logger], Optional[Mapping[str, str]]) -> Any
+	def _subprocess(self, args, logger=None, env=None, cwd=None):
+		# type: (Sequence[str], Optional[logging.Logger], Optional[Mapping[str, str]], Optional[str]) -> Any
 		if logger is None:
 			logger = self.logger
 		elif isinstance(logger, string_types):
 			logger = self.logger.getChild(logger)
-		return call_process(args, logger, env)
+		return call_process(args, logger, env, cwd)
 
 	@possible_network_error
 	def _send_information(self, app, status, value=None):
