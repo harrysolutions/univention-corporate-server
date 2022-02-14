@@ -191,30 +191,32 @@ class Update(UniventionAppAction):
 				appcenter_host = 'http://%s' % appcenter_host[8:]
 
 			cache_dir = app_cache.get_cache_dir()
+			tmp_file = os.path.join(cache_dir, '.tmp.tar')
 			all_tar_file = os.path.join(cache_dir, '.all.tar')
 			all_tar_url = '%s/meta-inf/%s/all.tar.zsync' % (appcenter_host, app_cache.get_ucs_version())
 			self.log('Downloading "%s"...' % all_tar_url)
 			cwd = os.getcwd()
 			os.chdir(os.path.dirname(all_tar_file))
 			try:
-				if self._subprocess(['zsync', all_tar_url, '-q', '-o', all_tar_file]).returncode:
+				if self._subprocess(['zsync', all_tar_url, '-q', '-o', tmp_file, '-i', all_tar_file]).returncode:
 					# fallback: download all.tar.gz without zsync. some proxys have difficulties with it, including:
 					#   * Range requests are not supported
 					#   * HTTP requests are altered
 					self.warn('Downloading the App archive via zsync failed. Falling back to download it directly.')
 					self.warn('For better performance, try to make zsync work for "%s". The error may be caused by a proxy altering HTTP requests' % all_tar_url)
 					self._download_files(app_cache, ['all.tar.gz'])
-					self._uncompress_archive(app_cache, os.path.join(cache_dir, '.all.tar.gz'))
+					tgz_file = os.path.join(cache_dir, 'all.tar.gz')
+					self._uncompress_archive(app_cache, tgz_file)
 			finally:
 				os.chdir(cwd)
 			try:
-				self._verify_file(all_tar_file)
+				self._verify_file(tmp_file)
 			except UpdateSignatureVerificationFailed:
 				# we remove this file
 				# 1. to not "accidentally" use it (although this should not happen, as it is only extracted in the next line)
 				# 2. to signal the app center to download it again in the next run
-				os.unlink(all_tar_file)
-				os.unlink(all_tar_file + '.gpg')
+				os.unlink(tmp_file)
+				os.unlink(tmp_file + '.gpg')
 				raise
 			self._extract_archive(app_cache)
 			return True
@@ -286,7 +288,7 @@ class Update(UniventionAppAction):
 		try:
 			with gzip_open(local_archive, 'rb') as zipped_file:
 				archive_content = zipped_file.read()
-				with open(os.path.join(app_cache.get_cache_dir(), '.all.tar'), 'wb') as extracted_file:
+				with open(os.path.join(app_cache.get_cache_dir(), '.tmp.tar'), 'wb') as extracted_file:
 					extracted_file.write(archive_content)
 		except (zlib.error, EnvironmentError) as exc:
 			self.warn('Error while reading %s: %s' % (local_archive, exc))
@@ -296,18 +298,22 @@ class Update(UniventionAppAction):
 			return True
 
 	def _extract_archive(self, app_cache):
+		"""`tar xf` in "Python" """
 		# type: (AppCenterCache) -> None
 		cache_dir = app_cache.get_cache_dir()
 		self.debug('Extracting archive in %s' % cache_dir)
 		self._purge_old_cache(cache_dir)
-		all_tar_file = os.path.join(cache_dir, '.all.tar')
-		self.debug('Unpacking %s...' % all_tar_file)
-		if self._subprocess(['tar', '-C', cache_dir, '-xf', all_tar_file]).returncode:
-			raise UpdateUnpackArchiveFailed(all_tar_file)
+		tmp_file = os.path.join(cache_dir, '.tmp.tar')
+		self.debug('Unpacking %s...' % tmp_file)
+		if self._subprocess(['tar', '-C', cache_dir, '-x', '-f', tmp__file]).returncode:
+			raise UpdateUnpackArchiveFailed(tmp_file)
 		# make sure cache dir is available for everybody
 		os.chmod(cache_dir, 0o755)
-		# `touch all_tar_file` to get a new cache in case it was created in between extraction
-		os.utime(all_tar_file, None)
+		# `touch tmp_file` to get a new cache in case it was created in between extraction
+		os.utime(tmp_file, None)
+		# Rename temporary to final file name
+		all_tar_file = os.path.join(cache_dir, '.all.tar')
+		os.rename(tmp__file, all_tar_file)
 
 	def _purge_old_cache(self, cache_dir):
 		# type: (str) -> None
