@@ -76,13 +76,6 @@ git_last_updated_timezone = 'Europe/Berlin'
 
 
 numfig = True
-numfig_format = {
-    "figure": _("figure %s:"),
-    "table": _("table %s:"),
-    "code-block": _("listing %s:"),
-    "section": _("section %s:"),
-}
-
 
 if "spelling" in sys.argv:
     spelling_lang = "en_US"
