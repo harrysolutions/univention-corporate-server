@@ -11,6 +11,7 @@ Welcome to Univention Corporate Server architecture!
    index
    classification
    concepts/index
+   components/index
 
 .. only:: html
 
