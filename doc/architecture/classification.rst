@@ -45,12 +45,9 @@ APT, see the `Debian package management chapter in the Debian reference
 <debian-ref-package-mngmt_>`_.
 
 Univention distributes most packages from Debian GNU/Linux for the *amd64*
-architecture without changes for UCS. This includes the GNU/Linux kernel offered
-by Debian and about xx% of the packages.
-
-.. TODO Ask SME: For some rough statistics
-   TODO Ask SME: How many packages do we copy from Debian? How many of them are changed by Univention? Do we copy all packages?
-   TODO Ask SME: How many packages are added by Univention?
+architecture without changes for UCS. This includes the GNU/Linux kernel and
+over 98% unchanged packages. Univention uses the default services from the
+Debian distribution and delivers custom configurations for UCS.
 
 In the following circumstances, Univention builds and maintains derived
 packages:
@@ -60,6 +57,8 @@ packages:
 
 Additionally, Univention develops own software responsible for UCS functionality
 that is distributed as Debian package.
+
+Nevertheless, UCS doesn't include packages from the Debian games section.
 
 Identity management
 ===================

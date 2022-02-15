@@ -61,7 +61,11 @@ Domain Users
    group identifies the user account as belonging to a person. The user account
    only has a minimal set of permissions in the domain.
 
-   .. TODO : Ask SME: What permissions have user accounts in the Domain Users group per default?
+   For example, users accounts in the group can read the domain database, but
+   cannot view password hashes. Additional apps in the domain like UCS@school
+   and fetchmail limit the read permissions. User accounts in the *Domain
+   Users* group also cannot log in to UCS systems for a remote shell. The UCS
+   management system yields no modules for them either.
 
 Domain Admins
    UCS creates one user account called *Administrator* during the installation
@@ -83,11 +87,19 @@ UCS systems can read data from the domain database with their machine account.
 Every machine account has assigned the following default permissions in the UCS
 domain:
 
-.. TODO : Ask SME: Check for the correct listing. The manual only mentions the machine account two times.
+.. TODO Add reference to LDAP service and a hint about the LDAP ACLs in the
+   referred section. Statements about LDAP and ACLs don't fit in this place.
 
-* The UCS system can read all object information from the domain database.
+   The distinct permission for the machine account are defined in LDAP ACLs. See
+   /etc/ldap/slapd.conf, the ACL blocks beginning with ``access-to ...``
+
+* The UCS system can read all object information and password hashes for
+  accounts from the domain database. Apps like UCS@school and fetchmail limit
+  the read permissions.
+
 * The UCS system can write only information to the domain database that is
-  associated with its account.
+  associated with its account, for example the version of the installed UCS
+  or other apps.
 
 Policies
 --------
