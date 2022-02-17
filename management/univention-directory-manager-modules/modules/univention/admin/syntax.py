@@ -3414,7 +3414,7 @@ class ldapDn(simple):
 	def get_widget(cls, prop):
 		if cls is ldapDn:
 			return 'TextBox'
-		return 'umc/modules/udm/MultiObjectSelect' if prop.multivalue else 'ComboBox'
+		return 'umc/modules/udm/MultiObjectSelect' if prop.multivalue else 'ComboBox'  # TODO: ?
 	widget_default_search_pattern = ''
 
 	@classmethod
@@ -3586,7 +3586,7 @@ class ldapDnOrNone(simple):
 	def get_widget(cls, prop):
 		if cls is ldapDnOrNone:
 			return 'TextBox'
-		return 'umc/modules/udm/MultiObjectSelect' if prop.multivalue else 'ComboBox'
+		return 'umc/modules/udm/MultiObjectSelect' if prop.multivalue else 'ComboBox'  # TODO: ?
 
 	widget_default_search_pattern = ''
 
