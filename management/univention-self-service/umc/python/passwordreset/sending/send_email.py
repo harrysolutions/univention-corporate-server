@@ -54,6 +54,7 @@ import email.charset
 
 from univention.config_registry import ConfigRegistry
 from univention.lib.i18n import Translation
+import univention.debug as ud
 
 from univention.management.console.modules.passwordreset.send_plugin import UniventionSelfServiceTokenEmitter
 
@@ -94,6 +95,7 @@ class SendEmail(UniventionSelfServiceTokenEmitter):
 		return length
 
 	def send(self):
+		ud.debug(ud.ADMIN, ud.INFO, 'passwordreset/sending/send_email.py send_email()')
 		path_ucr = self.ucr.get("umc/self-service/passwordreset/email/text_file")
 		if path_ucr and os.path.exists(path_ucr):
 			path = path_ucr
