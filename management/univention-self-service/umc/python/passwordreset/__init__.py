@@ -52,6 +52,7 @@ from univention.lib.umc import Client, HTTPError, ConnectionError, Unauthorized
 import univention.admin.objects
 import univention.admin.syntax
 import univention.admin.uexceptions as udm_errors
+import univention.debug as ud
 from univention.management.console.modules import Base
 from univention.management.console.log import MODULE
 from univention.management.console.config import ucr
@@ -812,6 +813,7 @@ class Instance(Base):
 			raise
 
 	def _notify_about_account_deregistration(self, username, mail):
+		ud.debug(ud.ADMIN, ud.INFO, 'passwordreset/__init__.py _notify_about_account_deregistration()')
 		if not mail:
 			return
 		ucr.load()
@@ -1031,6 +1033,7 @@ class Instance(Base):
 			raise
 
 	def _notify_about_email_change(self, username, old_email, new_email):
+		ud.debug(ud.ADMIN, ud.INFO, 'passwordreset/__init__.py _notify_about_email_change()')
 		if not old_email:
 			return
 		new_email = new_email or ''
