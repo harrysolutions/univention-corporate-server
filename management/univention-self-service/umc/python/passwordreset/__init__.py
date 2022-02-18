@@ -52,6 +52,7 @@ from univention.lib.umc import Client, HTTPError, ConnectionError, Unauthorized
 import univention.admin.objects
 import univention.admin.syntax
 import univention.admin.uexceptions as udm_errors
+import univention.debug as ud
 from univention.management.console.modules import Base
 from univention.management.console.log import MODULE
 from univention.management.console.config import ucr
@@ -640,6 +641,7 @@ class Instance(Base):
 		username=StringSanitizer(required=True))
 	@simple_response
 	def send_verification_token(self, username):
+		ud.debug(ud.ADMIN, ud.INFO, 'bwhite-friday: __init__ / send_verification_token()')
 		MODULE.info("send_verification_token(): username: {}".format(username))
 		ucr.load()
 		if ucr.is_false('umc/self-service/account-verification/backend/enabled', True):
@@ -699,6 +701,7 @@ class Instance(Base):
 		method=StringSanitizer(required=True))
 	@simple_response
 	def send_token(self, username, method):
+		ud.debug(ud.ADMIN, ud.INFO, 'bwhite-friday: __init__ / send_token()')
 		if ucr.is_false('umc/self-service/passwordreset/backend/enabled'):
 			msg = _('The password reset was disabled via the Univention Configuration Registry.')
 			MODULE.error('send_token(): {}'.format(msg))
@@ -715,11 +718,13 @@ class Instance(Base):
 
 		# check if the user has the required attribute set
 		user = self.get_udm_user(username=username)
+		ud.debug(ud.ADMIN, ud.INFO, 'bwhite: __init__ / 721 / value of user: ' + str(user.keys()))
 		username = user["username"]
 
 		if len(user[plugin.udm_property]) > 0:
 			# found contact info
-			self.send_message(username, method, user[plugin.udm_property])
+			# self.send_message(username, method, user[plugin.udm_property])
+			self.send_message(username, method, user[plugin.udm_property], all_user_props=user)
 
 		# no contact info
 		raise MissingContactInformation()
@@ -923,7 +928,8 @@ class Instance(Base):
 		rand = random.SystemRandom()
 		return ''.join(rand.choice(chars) for _ in range(length))
 
-	def send_message(self, username, method, address, raise_on_success=True):
+	def send_message(self, username, method, address, raise_on_success=True, all_user_props=None):
+		ud.debug(ud.ADMIN, ud.INFO, 'bwhite: __init__ all_user_props: ' + str(all_user_props))
 		plugin = self._get_send_plugin(method)
 		try:
 			token_from_db = self.db.get_one(username=username)
@@ -943,7 +949,7 @@ class Instance(Base):
 			MODULE.info("send_token(): Adding new token for user '{}'...".format(username))
 			self.db.insert_token(username, method, token)
 		try:
-			self._call_send_msg_plugin(username, method, address, token)
+			self._call_send_msg_plugin(username, method, address, token, all_user_props=all_user_props)
 		except Exception:
 			MODULE.error("send_token(): Error sending token with via '{method}' to '{username}'.".format(
 				method=method, username=username))
@@ -963,14 +969,35 @@ class Instance(Base):
 			raise UMC_Error("Unknown send message method", status=500)
 		return plugin
 
-	def _call_send_msg_plugin(self, username, method, address, token):
+	# def _call_send_msg_plugin(self, username, method, address, token, all_user_props=None):
+	def _call_send_msg_plugin(self, username, method, address, token, **kwargs):
 		MODULE.info("send_message(): username: {} method: {} address: {}".format(username, method, address))
 		plugin = self._get_send_plugin(method)
 
-		plugin.set_data({
+		temp_data_dict = {
 			"username": username,
 			"address": address,
-			"token": token})
+			"token": token}
+
+		# ugly! but let's see if we can jam arbitrary properties onto our "data" here...
+		user_data_dict = dict()
+		try:
+			for key, value in kwargs['all_user_props'].items():
+				user_data_dict[key] = value
+		except (NameError, KeyError, AttributeError):
+			pass
+
+		# we replay out temp_data_dict here, because we need these specific keys, even
+		# if they were present in user_data_dict.
+		for key, value in temp_data_dict.items():
+			user_data_dict[key] = value
+
+		plugin.set_data(user_data_dict)
+
+		ud.debug(ud.ADMIN, ud.INFO, 'bwhite: temp_data_dict: ' + str(temp_data_dict))
+		plugin.set_data(temp_data_dict)
+
+
 		MODULE.info("send_message(): Running plugin of class {}...".format(plugin.__class__.__name__))
 		try:
 			plugin.send()

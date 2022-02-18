@@ -54,6 +54,7 @@ import email.charset
 
 from univention.config_registry import ConfigRegistry
 from univention.lib.i18n import Translation
+import univention.debug as ud
 
 from univention.management.console.modules.passwordreset.send_plugin import UniventionSelfServiceTokenEmitter
 
@@ -94,6 +95,7 @@ class SendEmail(UniventionSelfServiceTokenEmitter):
 		return length
 
 	def send(self):
+		ud.debug(ud.ADMIN, ud.INFO, 'bwhite: send_email.py send()')
 		path_ucr = self.ucr.get("umc/self-service/passwordreset/email/text_file")
 		if path_ucr and os.path.exists(path_ucr):
 			path = path_ucr
@@ -107,7 +109,31 @@ class SendEmail(UniventionSelfServiceTokenEmitter):
 		link = "https://{fqdn}/univention/self-service/#page=newpassword".format(fqdn=frontend_server)
 		tokenlink = "https://{fqdn}/univention/self-service/#page=newpassword&token={token}&username={username}".format(fqdn=frontend_server, username=quote(self.data["username"]), token=quote(self.data["token"]))
 
-		txt = txt.format(username=self.data["username"], token=self.data["token"], link=link, tokenlink=tokenlink)
+		# probably screwy, maybe security problem?
+		formatter_dict = dict()
+		for key, value in self.data.items():
+			formatter_dict[key] = value
+		formatter_dict['link'] = link
+		formatter_dict['tokenlink'] = tokenlink
+
+		fields_must_exist = [
+			'link',
+			'tokenlink',
+			'token',
+			'username',
+			'mailPrimaryAddress',
+			'title',
+			'firstname',
+			'lastname'
+		]
+		for fn in fields_must_exist:
+			if fn not in formatter_dict:
+				formatter_dict[fn] = 'not set, no default'
+
+		ud.debug(ud.ADMIN, ud.INFO, '!!! bwhite: str value of data: ' + str(self.data))
+		# txt = txt.format(username=self.data["username"], token=self.data["token"], link=link, tokenlink=tokenlink)
+		txt = txt.format( **formatter_dict )
+
 
 		msg = MIMENonMultipart('text', 'plain', charset='utf-8')
 		cs = email.charset.Charset("utf-8")
