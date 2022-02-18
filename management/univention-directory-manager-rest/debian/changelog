@@ -1,3 +1,9 @@
+univention-directory-manager-rest (10.0.2-9) unstable; urgency=medium
+
+  * REVERT BEFORE MERGE: Increase version number
+ 
+ -- Julia Bremer <bremer@univention.de>  Fri, 18 Feb 2022 16:53:07 +0100
+
 univention-directory-manager-rest (10.0.2-7) unstable; urgency=medium
 
   * Bug #50050: document UCR variable and use UCR default layer

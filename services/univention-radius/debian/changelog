@@ -1,3 +1,9 @@
+univention-radius (7.1.2-9) unstable; urgency=medium
+
+  * REVERT BEFORE MERGE: Increase version number
+
+ -- Julia Bremer <bremer@univention.de>  Fri, 18 Feb 2022 16:54:30 +0100
+
 univention-radius (7.0.1-7) unstable; urgency=medium
 
   * Bug #54461: fix copy-paste artefact in .postinst

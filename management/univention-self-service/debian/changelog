@@ -1,3 +1,9 @@
+univention-self-service (5.0.1-20) unstable; urgency=medium
+
+  *   * REVERT BEFORE MERGE: Increase version number
+
+ -- Julia Bremer <bremer@univention.de>  Fri, 18 Feb 2022 16:50:35 +0100
+
 univention-self-service (5.0.1-18) unstable; urgency=medium
 
   * Bug #51327: migrate univention-self-service to Python 3

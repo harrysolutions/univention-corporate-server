@@ -1,3 +1,9 @@
+univention-portal (4.0.5-76) unstable; urgency=medium
+
+  * REVERT BEFORE MERGE: Increase version number
+
+ -- Julia Bremer <bremer@univention.de>  Fri, 18 Feb 2022 16:53:28 +0100
+
 univention-portal (4.0.5-74) unstable; urgency=medium
 
   * Bug #54029: Update French translation

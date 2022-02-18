@@ -1,3 +1,9 @@
+univention-python (13.0.3-5) unstable; urgency=medium
+
+  * REVERT BEFORE MERGE: Increase version number
+
+ -- Julia Bremer <bremer@univention.de>  Fri, 18 Feb 2022 16:51:22 +0100
+
 univention-python (13.0.2-6) unstable; urgency=medium
 
   * Bug #54408: add OPT_X_TLS_NEWCTX option for TLS encrypted
