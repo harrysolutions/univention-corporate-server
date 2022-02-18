@@ -80,7 +80,7 @@ class VerifyEmail(UniventionSelfServiceTokenEmitter):
 		return length
 
 	def send(self):
-		ud.debug(ud.ADMIN, ud.INFO, 'passwordreset/sending/verify_email.py send_email()')
+		ud.debug(ud.ADMIN, ud.INFO, 'bwhite: verify_email.py send()')
 		path_ucr = self.ucr.get("umc/self-service/account-verification/email/text_file")
 		if path_ucr and os.path.exists(path_ucr):
 			path = path_ucr
