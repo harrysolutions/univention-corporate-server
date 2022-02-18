@@ -288,6 +288,14 @@ class ISyntax(object):
 	widget_default_search_pattern = '*'
 	"""The default search pattern for this syntax. String render as TextBox, lists render as ComboBox with the possible choices, booleans render as CheckBox"""
 
+	@ClassProperty
+	def search_widget(cls):
+		if isinstance(cls.widget_default_search_pattern, (list, tuple)):
+			return 'ComboBox'
+		elif isinstance(cls.widget_default_search_pattern, bool):
+			return 'CheckBox'
+		return 'TextBox'
+
 	@classmethod
 	def get_widget(cls, prop):
 		return cls.widget

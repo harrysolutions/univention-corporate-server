@@ -130,8 +130,24 @@ define([
 				type: MixedInput,
 				name: 'objectPropertyValue',
 				label: _( 'Property value' ),
-				dynamicValues: 'udm/values',
-				dynamicOptions: { objectType : this.objectType },
+				dynamicValues: lang.hitch(this, function() {
+					var widget = this.getQueryWidget('objectProperty');
+					var opts = null, vals = null, search_defaults = {};
+					array.forEach(widget.getAllItems(), function(iitem) {
+						if (widget.get('value') === iitem.id) {
+							search_defaults = iitem.search_defaults || {};
+							vals = iitem.dynamicValues;
+							opts = iitem.dynamicOptions;
+							return false;
+						}
+					});
+					this.getQueryWidget('objectPropertyValue').setWidget(search_defaults.widget || 'TextBox');
+					if (vals && opts && search_defaults.default_value instanceof Array) {
+						var func = tools.stringOrFunction(vals, this.umcpCommand);
+						return func(opts);
+					}
+					return search_defaults.default_value;
+				}),
 				umcpCommand: lang.hitch(this, 'umcpCommand'),
 				depends: [ 'objectProperty' ]
 			}, {

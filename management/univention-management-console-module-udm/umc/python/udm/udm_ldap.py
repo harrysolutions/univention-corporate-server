@@ -943,6 +943,10 @@ class UDM_Module(object):
 				'options': copy.deepcopy(prop.options),
 				'readonly': not bool(prop.editable),
 				'searchable': not prop.dontsearch,
+				'search_defaults': {
+					'default_value': prop.syntax.widget_default_search_pattern,
+					'widget': prop.syntax.search_widget,
+				},
 				'multivalue': bool(prop.multivalue),
 				'identifies': bool(prop.identifies),
 				'threshold': prop.threshold,
