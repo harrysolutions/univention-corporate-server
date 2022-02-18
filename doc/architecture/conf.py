@@ -59,9 +59,15 @@ rst_epilog = """
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
+pdf_doc_base = "ucs-architecture"
+
 html_theme = 'univention_sphinx_book_theme'
 html_theme_options = {
     "extra_navbar": "Status: DRAFT. Work in Progress.",
+}
+
+html_context = {
+    "pdf_download_filename" : f"{pdf_doc_base}.pdf",
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -89,7 +95,7 @@ latex_engine = 'lualatex'
 latex_show_pagerefs = True
 latex_show_urls = "footnote"
 latex_logo = "_static/univention_logo.pdf"
-latex_documents = [(root_doc, 'ucs-architecture.tex', project, author, "manual", False)]
+latex_documents = [(root_doc, f'{pdf_doc_base}.tex', project, author, "manual", False)]
 latex_elements = {
     "papersize": "a4paper",
 }
