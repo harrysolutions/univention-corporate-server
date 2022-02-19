@@ -61,10 +61,11 @@ object_name_plural = _('Nagios services')
 long_description = ''
 operations = ['search', 'edit', 'add', 'remove']
 
-ldap_search_period = univention.admin.syntax.LDAP_Search(
-	filter='(objectClass=univentionNagiosTimeperiodClass)',
-	attribute=['nagios/timeperiod: name'],
-	value='nagios/timeperiod: name')
+
+class ldap_search_period(univention.admin.syntax.UDM_Attribute):
+	udm_module = 'nagios/timeperiod'
+	attribute = 'name'
+
 
 options = {
 	'default': univention.admin.option(

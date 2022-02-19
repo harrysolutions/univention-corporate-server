@@ -57,10 +57,10 @@ module_search_filter = univention.admin.filter.conjunction('&', [
 ])
 
 
-ldap_search_maildomain = univention.admin.syntax.LDAP_Search(
-	filter='(objectClass=univentionMailDomainname)',
-	attribute=['mail/domain: name'],
-	value='mail/domain: name')
+class ldap_search_maildomain(univention.admin.syntax.UDM_Attribute):
+	udm_module = 'mail/domain'
+	attribute = 'name'
+
 
 options = {
 	'default': univention.admin.option(
