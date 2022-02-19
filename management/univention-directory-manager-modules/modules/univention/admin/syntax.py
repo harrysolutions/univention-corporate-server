@@ -369,7 +369,7 @@ class ISyntax(object):
 		return None
 
 	@classmethod
-	def get_object_property_filter(cls, object_property, object_property_value):
+	def get_object_property_filter(cls, object_property, object_property_value, allow_asterisks=True):
 		"""Get a LDAP filter for a certain property
 
 		>>> ISyntax.get_object_property_filter('foo', 'bar')
@@ -377,11 +377,12 @@ class ISyntax(object):
 		>>> ISyntax.get_object_property_filter('foo', 'bar*')
 		'(|(foo=bar*)(foo=bar))'
 		"""
-		# TODO: do LDAP escaping here, instead of in layer above
-		ret = '%s=%s' % (object_property, object_property_value)
+		ret = filter_format('%s=%s', (object_property, object_property_value)).replace(escape_filter_chars('*'), '*')
 		no_substring_value = object_property_value.strip('*')
 		if no_substring_value and no_substring_value != object_property_value:
-			ret = '(|(%s)(%s=%s))' % (ret, object_property, no_substring_value)
+			ret = '(|(%s)(%s))' % (ret, filter_format('%s=%s', (object_property, no_substring_value)).replace(escape_filter_chars('*'), '*'))
+		if not allow_asterisks:
+			return ret
 		return ret
 
 
@@ -702,7 +703,7 @@ class _UDMObjectOrAttribute(object):
 		if object_property and object_property_value:
 			prop = module.property_descriptions.get(object_property)
 			syn = prop.syntax if prop else cls
-			property_filter_s = syn.get_object_property_filter(object_property, object_property_value)
+			property_filter_s = syn.get_object_property_filter(object_property, object_property_value, allow_asterisks=options.get('allow_asterisks', True))
 			if not options.get('hidden', True):
 				property_filter_s = cls._append_hidden_filter(module, property_filter_s)
 			if property_filter_s and not property_filter_s.startswith('('):
@@ -1731,9 +1732,9 @@ class boolean(simple):
 		return super(boolean, self).parse(text)
 
 	@classmethod
-	def get_object_property_filter(cls, object_property, object_property_value):
-		not_set_filter = '(!(%s=*))' % object_property
-		compare_filter = '%s=%s' % (object_property, object_property_value)
+	def get_object_property_filter(cls, object_property, object_property_value, allow_asterisks=True):
+		not_set_filter = filter_format('(!(%s=*))', (object_property,))
+		compare_filter = filter_format('%s=%s', (object_property, object_property_value))
 		if object_property_value == '0':
 			return '(|(%s)%s)' % (compare_filter, not_set_filter)
 		elif object_property_value == '1':
@@ -4538,7 +4539,7 @@ class IStates(select):
 		raise univention.admin.uexceptions.valueInvalidSyntax(_('Invalid choice.'))
 
 	@classmethod
-	def get_object_property_filter(cls, object_property, object_property_value):
+	def get_object_property_filter(cls, object_property, object_property_value, allow_asterisks=True):
 		try:
 			state_of_object_property_value = [state for state, (ldap_value, _) in cls.values if ldap_value == object_property_value][0]
 			if state_of_object_property_value not in (None, True, False):
@@ -4547,8 +4548,8 @@ class IStates(select):
 			return ''
 
 		states_of_this_syntax = [state for state, _ in cls.values]
-		not_set_filter = '(!(%s=*))' % object_property
-		compare_filter = '%s=%s' % (object_property, object_property_value)
+		not_set_filter = filter_format('(!(%s=*))', (object_property,))
+		compare_filter = filter_format('%s=%s', (object_property, object_property_value))
 		if state_of_object_property_value is None:
 			return not_set_filter
 		elif state_of_object_property_value is False and None not in states_of_this_syntax:
