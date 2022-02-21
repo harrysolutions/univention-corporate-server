@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: univention-directory-manager-rest\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-02-18 18:29+0100\n"
+"POT-Creation-Date: 2022-02-21 10:35+0100\n"
 "PO-Revision-Date: 2021-12-17 23:13+0100\n"
 "Last-Translator: Univention GmbH <packages@univention.de>\n"
 "Language-Team: Univention GmbH <packages@univention.de>\n"
@@ -471,7 +471,7 @@ msgstr ""
 #, python-format
 msgid "Generation of the service specific password failed. Error: %s"
 msgstr ""
-"Service %s unterstützt keine Service spezifischen Passwörter. Error: %s"
+"Die Generierung des Service spezifischen Passwortes ist fehlgeschlagen. Error: %s"
 
 #: module.py:3728
 #, python-format
