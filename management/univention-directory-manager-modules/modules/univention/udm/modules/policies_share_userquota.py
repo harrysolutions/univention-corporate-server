@@ -53,5 +53,5 @@ class PoliciesShareUserquotaModule(GenericModule):
 	_udm_object_class = PoliciesShareUserquotaObject
 
 	class Meta:
-		supported_api_versions = [1, 2]
+		supported_api_versions = [1, 2, 3]
 		suitable_for = ['policies/share_userquota']

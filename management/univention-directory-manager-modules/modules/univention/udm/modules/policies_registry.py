@@ -53,5 +53,5 @@ class PoliciesRegistryModule(GenericModule):
 	_udm_object_class = PoliciesRegistryObject
 
 	class Meta:
-		supported_api_versions = [1, 2]
+		supported_api_versions = [1, 2, 3]
 		suitable_for = ['policies/registry']

@@ -53,5 +53,5 @@ class SettingsPortalCategoryModule(GenericModule):
 	_udm_object_class = SettingsPortalCategoryObject
 
 	class Meta:
-		supported_api_versions = [2]
+		supported_api_versions = [2, 3]
 		suitable_for = ['settings/portal_category']
