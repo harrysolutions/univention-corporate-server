@@ -15,6 +15,11 @@ the architecture of Univention Corporate Server (UCS). You learn about UCS
 product components that you face directly when you use UCS. The product
 components typically act as entry points for your tasks.
 
+The description of the product components is for administrators and solution
+architects. For software developers and system engineers it provides the context
+for the architectural dive-in to UCS. Make sure you are familiar with the
+:ref:`concepts` behind UCS.
+
 The following product components introduce themselves in the order you will most
 likely encounter them when you work with UCS:
 
