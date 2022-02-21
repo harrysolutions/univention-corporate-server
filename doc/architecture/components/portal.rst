@@ -28,9 +28,9 @@ portal configuration controls the following aspects:
 * Which portal shows up on which UCS system in the domain?
 * Who sees which portal on which UCS system?
 
-The portal depends on :ref:`component-udm` to operate properly. For technical
-details about the UCS portal, see :ref:`services-ucs-portal`.
+The portal depends on :ref:`component-domain-management` to operate properly.
+For technical details about the UCS portal, see :ref:`services-ucs-portal`.
 
 For instructions about how to configure and customize the UCS portal page, see
 the `UCS manual in the UCS portal page section
-<https://docs.software-univention.de/manual.html#central:portal>`_.
+<ucs-manual-portal_>`_.

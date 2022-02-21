@@ -81,6 +81,6 @@ with the *IP client* role.
 For Microsoft Windows related systems, UCS offers the roles *Domain Trust
 Account*, *Windows Domaincontroller* and *Windows Workstation / Server*. For
 more information about the differences of these roles see `UCS system roles in
-the UCS manual <https://docs.software-univention.de/manual.html#systemrollen>`_.
+the UCS manual <ucs-manual-roles_>`_.
 
 .. TODO : Replace the reference with an intersphinx label reference, once the manual is available as Sphinx document.
