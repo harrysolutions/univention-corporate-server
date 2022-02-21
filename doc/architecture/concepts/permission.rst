@@ -63,7 +63,7 @@ Domain Users
 
    For example, users accounts in the group can read the domain database, but
    cannot view password hashes. Additional apps in the domain like UCS@school
-   and fetchmail limit the read permissions. User accounts in the *Domain
+   and Fetchmail limit the read permissions. User accounts in the *Domain
    Users* group also cannot log in to UCS systems for a remote shell. The UCS
    management system yields no modules for them either.
 
@@ -94,7 +94,7 @@ domain:
    /etc/ldap/slapd.conf, the ACL blocks beginning with ``access-to ...``
 
 * The UCS system can read all object information and password hashes for
-  accounts from the domain database. Apps like UCS@school and fetchmail limit
+  accounts from the domain database. Apps like UCS@school and Fetchmail limit
   the read permissions.
 
 * The UCS system can write only information to the domain database that is

@@ -8,7 +8,6 @@ administrative tasks to operate a UCS domain and maintain the UCS systems. It
 provides the UCS web interface in the domain. Administrators access the
 management system through the :ref:`component-portal` after they log in.
 
-
 The UCS management system provides for the following purposes:
 
 It consists of the following parts:
