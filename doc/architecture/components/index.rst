@@ -26,7 +26,7 @@ likely encounter them when you work with UCS:
 #. :ref:`component-portal`
 #. :ref:`component-management-system`
 #. :ref:`component-app-center`
-#. :ref:`component-file-print-services`
+#. :ref:`component-file-print`
 #. :ref:`component-command-line`
 
 .. toctree::
@@ -36,5 +36,5 @@ likely encounter them when you work with UCS:
    portal
    management-system
    app-center
-   file-print-services
+   file-print
    command-line
