@@ -142,16 +142,9 @@ class LdapCache(object):
 
 def _s(args: Any) -> Any:
 	if isinstance(input, (list, tuple)):
-		res = []
-		for n in input:
-			if isinstance(n, bytes):
-				res.append(n.decode('utf-8'))
-			elif isinstance(list, tuple):
-				res.append(_s(n))
-			else:
-				res.append(n)
-	elif isinstance(input, bytes):
-		res = input.decode('utf-8')
-	else:
-		res = input
-	return res
+		return [_s(arg) for arg in args]
+	if isinstance(args, bytes):
+		return args.decode('utf-8')
+	if isinstance(args, str):
+		return args
+	raise TypeError(type(args))
