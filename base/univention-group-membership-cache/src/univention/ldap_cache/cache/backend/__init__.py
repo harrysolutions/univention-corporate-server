@@ -51,12 +51,12 @@ class Caches(object):
 			yield name, cache
 
 	def get_shards_for_query(self, query: str) -> List[Shard]:
-		ret = []
-		for cache in self._caches.values():
-			for shard in cache.shards:
-				if shard.ldap_filter == query:
-					ret.append(shard)
-		return ret
+		return [
+			shard
+			for cache in self._caches.values()
+			for shard in cache.shards
+			if shard.ldap_filter == query
+		]
 
 	def get_sub_cache(self, name: str) -> Optional[LdapCache]:
 		return self._caches.get(name)
