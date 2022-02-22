@@ -1,3 +1,9 @@
+univention-directory-manager-modules (15.0.11-32) unstable; urgency=low
+
+  * Bug #51631: move udm_extension.py listener to be Python 3
+
+ -- Philipp Hahn <hahn@univention.de>  Thu, 03 Mar 2022 16:41:37 +0100
+
 univention-directory-manager-modules (15.0.11-31) unstable; urgency=medium
 
   * Bug #54402: Handle univentionUserTemplates in udm module groups/group correctly
