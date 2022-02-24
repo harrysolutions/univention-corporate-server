@@ -312,7 +312,7 @@ class ISyntax(object):
 
 		if getattr(self, 'depends', None) is not None:
 			descr.setdefault('dynamicOptions', {})
-			descr['dynamicOptions']['$depends$'] = self.depends  # TODO: we only need this for DNS_ForwardZoneList, IP_AddressList, MAC_AddressList, ...?
+			descr['dynamicOptions']['$depends$'] = self.depends  # TODO: we only need this for DNS_ForwardZoneList, IP_AddressList, MAC_AddressList, (select syntaxes with depends)
 			descr['depends'] = self.depends
 
 		def subsyntaxes(udm_property):
