@@ -1,10 +1,8 @@
-from __future__ import annotations
-
 """
 Example for a listener module, which logs changes to users.
 """
 
-from __future__ import print_function
+from __future__ import annotations, print_function
 
 import errno
 import os
@@ -14,7 +12,6 @@ from typing import Dict, List
 import univention.debug as ud
 from listener import SetUID
 
-name = 'printusers'
 description = 'print all names/users/uidNumbers into a file'
 filter = ''.join("""\
 (&

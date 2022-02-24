@@ -40,7 +40,6 @@ from typing import Dict, List
 import listener
 import univention.debug
 
-name = 'nagios-client'
 description = 'Create configuration for Nagios nrpe server'
 filter = '(objectClass=univentionNagiosServiceClass)'
 

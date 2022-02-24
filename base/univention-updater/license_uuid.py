@@ -38,7 +38,6 @@ from typing import Dict, List
 import listener
 import univention.config_registry
 
-name = 'license_uuid'
 description = 'Dump key id from license to local UCR variable'
 filter = '(&(objectClass=univentionLicense)(cn=admin))'
 

@@ -34,8 +34,6 @@ import subprocess
 
 from univention.listener import ListenerModuleHandler, ListenerModuleConfiguration
 
-name = 'portal_groups'
-
 GROUP_CACHE = '/var/cache/univention-portal/groups.json'
 
 
@@ -45,6 +43,5 @@ class PortalGroups(ListenerModuleHandler):
 			subprocess.call(['/usr/sbin/univention-portal', 'update', '--reason', 'ldap:group'])
 
 	class Configuration(ListenerModuleConfiguration):
-		name = name
 		description = 'Maintain groups cache for Univention Portal'
 		ldap_filter = '(univentionObjectType=groups/group)'

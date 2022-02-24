@@ -59,7 +59,6 @@ from six.moves.email_mime_text import MIMEText
 import listener
 import univention.debug as ud
 
-name = 'replication'
 description = 'LDAP Replica Node replication'
 filter = '(objectClass=*)'  # default filter - may be overwritten later
 modrdn = '1'
@@ -572,7 +571,7 @@ def addlist(new: Dict[str, List[bytes]]) -> List[Tuple[str, List[bytes]]]:
 
 
 def modlist(old: Dict[str, List[bytes]], new: Dict[str, List[bytes]]) -> List[Tuple[int, str, List[bytes]]]:
-	ml:  List[Tuple[int, str, List[bytes]]] = []
+	ml: List[Tuple[int, str, List[bytes]]] = []
 	for key, values in new.items():
 		if key.lower() in EXCLUDE_ATTRIBUTES:
 			continue
