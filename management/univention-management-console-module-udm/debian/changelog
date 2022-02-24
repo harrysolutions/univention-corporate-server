@@ -1,4 +1,4 @@
-univention-management-console-module-udm (10.0.1-23) unstable; urgency=medium
+univention-management-console-module-udm (10.1.1-23) unstable; urgency=medium
 
   * Bug #54190: fix transformation of LDAP values from LDAP_Search
     syntax from bytes

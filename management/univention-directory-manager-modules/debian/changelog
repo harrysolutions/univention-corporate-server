@@ -1,4 +1,4 @@
-univention-directory-manager-modules (15.0.11-39) unstable; urgency=medium
+univention-directory-manager-modules (15.1.11-39) unstable; urgency=medium
 
   * Bug #53581: patch to solve problems introduce in commit b74a2e5e9b28
 

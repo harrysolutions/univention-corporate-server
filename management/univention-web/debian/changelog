@@ -1,4 +1,4 @@
-univention-web (4.0.2-49) unstable; urgency=medium
+univention-web (4.1.2-49) unstable; urgency=medium
 
   * Bug #53678: don't display domain components of path in reverse
     domain notation
