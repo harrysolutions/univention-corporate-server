@@ -26,14 +26,14 @@
 # /usr/share/common-licenses/AGPL-3; if not, see
 # <https://www.gnu.org/licenses/>.
 
-from __future__ import absolute_import
+from __future__ import absolute_import, annotations
 
 import inspect
 import os
 import types  # noqa F401
 from contextlib import contextmanager
 from six import reraise, with_metaclass
-from typing import TYPE_CHECKING, Any, Dict, Iterable, Iterator, List, Mapping, Optional, Sequence, Tuple, Type, Union  # noqa F401
+from typing import TYPE_CHECKING, Any, Dict, Iterable, Iterator, List, Mapping, Optional, Sequence, Tuple, Type, Union, cast  # noqa F401
 
 import listener
 from univention.admin.uldap import access, position
@@ -50,9 +50,9 @@ class HandlerMetaClass(type):
 	"""
 	Read handler configuration and invoke adapter.
 	"""
-	def __new__(cls, clsname, bases, attrs):
-		# type: (str, List[Type[Any]], Dict[str, str]) -> Any # Union[Type[Any], Type[ListenerModuleHandler]]
-		kls = super(HandlerMetaClass, cls).__new__(cls, clsname, bases, attrs)
+	def __new__(mcs, clsname, bases, attrs):
+		# type: (str, Tuple[type, ...], Dict[str, Any]) -> Type[ListenerModuleHandler]
+		kls = cast(Type["ListenerModuleHandler"], super().__new__(mcs, clsname, bases, attrs))
 		is_listener_module = getattr(kls, '_is_listener_module', lambda: False)
 		if is_listener_module():
 			kls.config = kls._get_configuration()
