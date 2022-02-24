@@ -66,12 +66,12 @@
 		</para>
 		<variablelist>
 			<varlistentry>
-				<term id="udl:mod:name"><varname>name</varname>: <type>str</type> (required)</term>
+				<term id="udl:mod:name"><varname>name</varname>: <type>str</type> (optional)</term>
 				<term><function>get_name()</function> -> <type>str</type></term>
 				<listitem>
 					<para>
 						This name is used to uniquely identify the module.
-						This should match with the filename containing this listener module without the <literal>.py</literal> suffix.
+						It defaults to the filename containing this listener module without the <literal>.py</literal> suffix.
 						The name is used to keep track of the module state in <filename class="directory">/var/lib/univention-directory-listener/handlers/</filename>.
 					</para>
 				</listitem>
@@ -259,7 +259,7 @@
 		</para>
 		<variablelist>
 			<varlistentry>
-				<term><function>get_name()</function> -> <type>str</type> (required)</term>
+				<term><function>get_name()</function> -> <type>str</type> (optional)</term>
 				<term><varname>name</varname>: <type>str</type></term>
 				<listitem>
 					<simpara>The internal name of the handler; see <link linkend="udl:mod:name">name</link>.</simpara>
@@ -437,7 +437,6 @@
 			The required variables and functions must be declared at the module level.
 		</para>
 		<programlisting language="python"><![CDATA[
-name : str = "module_name"
 description : str = "Module description"
 filter : str = "(objectClass=*)"
 attributes : List[str] = ["objectClass"]
