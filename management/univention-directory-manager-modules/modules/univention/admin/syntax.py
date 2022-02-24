@@ -445,8 +445,6 @@ class select(ISyntax):
 
 	depends = None  # type: Optional[str]
 	"""The name of another |UDM| property this syntax depends on."""
-	javascript_dependency = False  # type: bool
-	"""Whether dependencies should be resolved via Javascript (instead of a further request)"""
 
 	@classmethod
 	def parse(self, text):
@@ -489,12 +487,7 @@ class select(ISyntax):
 	def get_widget_choices_options(self, udm_property):
 		opts = None
 		if self.depends:
-			if self.javascript_dependency:
-				opts = {
-					'dynamicValues': 'javascript:umc/modules/udm/callbacks:setDynamicValues',
-				}
-			else:
-				opts = _default_widget_options(self)
+			return _default_widget_options(self)
 
 		return opts
 
@@ -4276,7 +4269,11 @@ class IP_AddressList(ipAddress, select):
 	"""
 	choices = []  # type: Sequence[Tuple[str, str]]
 	depends = 'ip'
-	javascript_dependency = True
+
+	def get_widget_choices_options(self, udm_property):
+		return {
+			'dynamicValues': 'javascript:umc/modules/udm/callbacks:setDynamicValues',
+		}
 
 	widget = select.widget
 
@@ -4299,7 +4296,11 @@ class MAC_AddressList(MAC_Address, select):
 	"""
 	choices = []  # type: Sequence[Tuple[str, str]]
 	depends = 'mac'
-	javascript_dependency = True
+
+	def get_widget_choices_options(self, udm_property):
+		return {
+			'dynamicValues': 'javascript:umc/modules/udm/callbacks:setDynamicValues',
+		}
 
 	widget = select.widget
 
@@ -4386,7 +4387,11 @@ class DNS_ForwardZoneList(select):
 	[('example.org', 'example.org')]
 	"""
 	depends = 'dnsEntryZoneForward'
-	javascript_dependency = True
+
+	def get_widget_choices_options(self, udm_property):
+		return {
+			'dynamicValues': 'javascript:umc/modules/udm/callbacks:setDynamicValues',
+		}
 
 	@classmethod
 	def get_choices(cls, lo, options):
@@ -5565,7 +5570,6 @@ class allModuleOptions(combobox):
 	"""
 
 	depends = 'module'
-	javascript_dependency = False
 
 	@classmethod
 	def update_choices(cls):
