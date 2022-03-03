@@ -52,18 +52,18 @@ class LdapCacheHandler(ListenerModuleHandler):
 
 	def create(self, dn, new):
 		self._cleanup_cache_if_needed()
-		for shard in get_cache().get_shards_for_query(self._get_configuration().get_ldap_filter()):
+		for shard in get_cache().get_shards_for_query(self.config.get_ldap_filter()):
 			shard.add_object((dn, new))
 
 	def modify(self, dn, old, new, old_dn):
 		self._cleanup_cache_if_needed()
-		for shard in get_cache().get_shards_for_query(self._get_configuration().get_ldap_filter()):
+		for shard in get_cache().get_shards_for_query(self.config.get_ldap_filter()):
 			shard.rm_object((old_dn or dn, old))
 			shard.add_object((dn, new))
 
 	def remove(self, dn, old):
 		self._cleanup_cache_if_needed()
-		for shard in get_cache().get_shards_for_query(self._get_configuration().get_ldap_filter()):
+		for shard in get_cache().get_shards_for_query(self.config.get_ldap_filter()):
 			shard.rm_object((dn, old))
 
 	def post_run(self):
@@ -71,5 +71,4 @@ class LdapCacheHandler(ListenerModuleHandler):
 		self._cleanup_cache_if_needed()
 
 	class Configuration(ListenerModuleHandler.Configuration):
-		def get_priority(self):
-			return 2.0
+		priority = 2.0
