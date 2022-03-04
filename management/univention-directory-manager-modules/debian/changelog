@@ -1,4 +1,4 @@
-univention-directory-manager-modules (15.0.12-32) unstable; urgency=medium
+univention-directory-manager-modules (15.0.12-35) unstable; urgency=medium
 
    * REVERT BEFORE MERGE: Increase version number
 

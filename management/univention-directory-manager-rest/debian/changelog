@@ -1,4 +1,4 @@
-univention-directory-manager-rest (10.0.2-9) unstable; urgency=medium
+univention-directory-manager-rest (10.0.2-12) unstable; urgency=medium
 
   * REVERT BEFORE MERGE: Increase version number
  
