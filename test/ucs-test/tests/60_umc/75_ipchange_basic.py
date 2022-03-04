@@ -14,6 +14,7 @@ from univention.testing.umc import Client
 @pytest.mark.roles_not('basesystem')
 @pytest.mark.exposure('dangerous')
 def test_ipchange_basic(udm, ucr):
+	"""Check basic ip_change functionality"""
 	role = ucr.get('server/role')
 	if role == 'domaincontroller_master':
 		role = 'domaincontroller_backup'
