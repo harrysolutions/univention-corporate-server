@@ -48,6 +48,7 @@ import pytz
 import six
 from ldap.filter import filter_format
 import tzlocal
+import passlib.hash
 from M2Crypto import X509
 
 import univention.admin
@@ -2183,15 +2184,14 @@ class object(univention.admin.handlers.simpleLdap):
 		return ml
 
 	def _modlist_service_specific_password(self, ml):
-		udm_new = self.info.get('serviceSpecificPassword', None)
-		if udm_new:
-			service = udm_new.get('service', None)
-			password = udm_new.get('password', None)
+		new_password = self.info.get('serviceSpecificPassword', None)
+		if new_password:
+			service = new_password.get('service', None)
+			password = new_password.get('password', None)
 			if service != 'radius':
-				raise univention.admin.uexceptions.unsupportedService(service)
+				raise univention.admin.uexceptions.valueError(_('Service does not support service specific passwords'), property='serviceSpecificPassword')
 			if service:
-				import passlib.hash
-				nt = passlib.hash.nthash.hash(password).upper().encode('utf-8')
+				nt = passlib.hash.nthash.hash(password).upper().encode('ASCII')
 				ml.append(('univentionRadiusPassword', self.oldattr.get('univentionRadiusPassword', [b'']), [nt]))
 		return ml
 
