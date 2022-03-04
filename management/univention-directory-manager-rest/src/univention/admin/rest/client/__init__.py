@@ -568,7 +568,6 @@ class Object(Client):
 		self.last_modified = obj.last_modified
 
 	def generate_service_specific_password(self, service):
-		if "users/user" not in self.uri:
-			raise ValueError("Service specific password generation is only supported for users")
-		response = self.client.make_request('POST', self.uri + "/service-specific-password", data={"service": service})
+		uri = self.client.get_relation(self.hal, 'udm:service-specific-password')['href']
+		response = self.client.make_request('POST', uri, data={"service": service})
 		return response.data.get('password', None)

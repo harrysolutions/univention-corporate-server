@@ -1081,6 +1081,7 @@ class Relations(Resource):
 			'children-types': 'list of object types which can be created underneath of the container or superordinate',
 			'properties': 'properties of the given object type',
 			'layout': 'layout information for the given object type',
+
 			'tree': 'list of tree content for providing a hierarchical navigation',
 			'policy-result': 'policy result by virtual policy object containing the values that the given object or container inherits',
 			'report': 'create a report',
@@ -2664,6 +2665,9 @@ class Object(FormBase, Resource):
 		if obj.has_property('jpegPhoto'):
 			self.add_link(props, 'udm:user-photo', self.urljoin(quote_dn(obj.dn), 'properties/jpegPhoto.jpg'), type='image/jpeg', title=_('User photo'))
 
+		if module.name == 'users/user':
+			self.add_link(props, 'udm:service-specific-password', self.urljoin(quote_dn(obj.dn), 'service-specific-password'), title=_('Service specific password'))
+
 		self.add_caching(public=False, must_revalidate=True)
 		self.content_negotiation(props)
 
@@ -3710,21 +3714,17 @@ class ServiceSpecificPassword(Resource):
 
 		service_type = self.get_body_argument('service')
 
-		try:
-			cfg = password_config(service_type)
-			new_password = generate_password(**cfg)
-		except Exception as exc:
-			raise HTTPError(400, _('Generation of the service specific password failed. Error: %s') % (exc,))
+		cfg = password_config(service_type)
+		new_password = generate_password(**cfg)
 
 		obj = yield self.pool.submit(module.get, dn)
 		obj['serviceSpecificPassword'] = {'service': service_type, 'password': new_password}
 
 		try:
 			yield self.pool.submit(obj.modify)
-		except udm_errors.unsupportedService as exc:
-			raise HTTPError(400, _('Service %s does not support service specific passwords. Error: %s') % (service_type, exc,))
-		except Exception as exc:
-			raise HTTPError(400, _('Failed to set service specific password. Error: %s') % (exc,))
+		except udm_errors.valueError as exc:
+			# ValueError raised if Service is not supported
+			raise HTTPError(400, str(exc))
 		result = {'service': service_type, 'password': new_password}
 		self.content_negotiation(result)
 
