@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: univention-directory-manager-rest\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-02-21 10:35+0100\n"
+"POT-Creation-Date: 2022-03-04 16:59+0100\n"
 "PO-Revision-Date: 2021-12-17 23:13+0100\n"
 "Last-Translator: Univention GmbH <packages@univention.de>\n"
 "Language-Team: Univention GmbH <packages@univention.de>\n"
@@ -448,33 +448,3 @@ msgstr "Importieren der Lizenz fehlgeschlagen: %s."
 #: module.py:3695 module.py:3697
 msgid "The license was imported successfully."
 msgstr "Die Lizenz wurder erfolgreich importiert."
-
-#: module.py:3722
-#, python-format
-msgid "Service %s does not support service specific passwords"
-msgstr "Service %s unterstützt keine Service spezifischen Passwörter"
-
-#: module.py:3718
-#, python-format
-msgid "Generation a service password failed. Error: %s"
-msgstr ""
-"Die Generierung des service spezifischen Passwortes ist fehlgeschlagen. "
-"Error: %s"
-
-#: module.py:3726
-#, python-format
-msgid "Service %s does not support service specific passwords. Error: %s"
-msgstr ""
-"Service %s unterstützt keine Service spezifischen Passwörter. Error: %s"
-
-#: module.py:3718
-#, python-format
-msgid "Generation of the service specific password failed. Error: %s"
-msgstr ""
-"Die Generierung des Service spezifischen Passwortes ist fehlgeschlagen. Error: %s"
-
-#: module.py:3728
-#, python-format
-msgid "Failed to set service specific password. Error: %s"
-msgstr ""
-"Das Setzen des Service spezifischen Passwortes ist fehlgeschlagen. Error: %s"
