@@ -14,7 +14,7 @@ Primary Directory Node
    single: Primary Directory Node
 
 A UCS system with Primary Directory Node role is the first, the primary, domain
-controller in a domain. It is the only system with write permissions to the
+node in a domain. It is the only system with write permissions to the
 central domain database. Only one system in the domain can have the Primary
 Directory Node role.
 
@@ -48,7 +48,7 @@ replication in UCS helps with data minimization, domain protection and
 permission enforcement.
 
 For example, imagine an organization with office locations in Berlin and Bremen.
-Each location has a Replica Directory Node as domain controller. The Replica
+Each location has a Replica Directory Node as domain node. The Replica
 Directory Nodes only replicate domain objects like users, groups and printers
 that are relevant for their respective location. They don't store objects
 assigned to other locations.
@@ -66,7 +66,7 @@ Managed Node
 
 UCS systems in the role Managed Node don't have any copy of the domain database.
 Services on Managed Nodes read domain information over the network from one of
-the other domain controller roles.
+the other domain node roles.
 
 Clients
 -------

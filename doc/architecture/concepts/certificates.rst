@@ -5,7 +5,7 @@ Certificate infrastructure
 
 The certificate infrastructure in a domain operated with Univention Corporate
 Server (UCS) ensures the trust context between all participants. The first
-domain controller creates its own certificate authority (CA) for the domain. For
+domain node creates its own certificate authority (CA) for the domain. For
 more information see the `Wikipedia article Certificate authority
 <w-certificate-authority_>`_.
 
