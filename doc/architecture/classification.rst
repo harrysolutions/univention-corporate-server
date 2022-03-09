@@ -110,10 +110,11 @@ hardware, various software and network components. It is the foundation of an
 organization's technology system and drives the organization's success.
 
 UCS provides important infrastructure services to create an IT network
-infrastructure and connect IT components. For example UCS assigns addresses with
-DHCP and resolves hostnames with DNS, and much more. Administrators manage
-various IT components in their IT environment, like different kind of hosts,
-clients and printers.
+infrastructure and connect IT components. For example UCS assigns addresses to
+computers and other network components through `DHCP <w-dhcp_>`_ and resolves
+hostnames through `DNS <w-dns_>`_, and much more.  Administrators manage various
+IT components in their IT environment, like different kind of hosts, clients and
+printers.
 
 .. TODO  Enable, once the services section is written.
    """For more information about the different infrastructure services in UCS, see
