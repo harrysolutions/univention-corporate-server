@@ -38,6 +38,7 @@ import traceback
 from getpass import getpass
 from six.moves import input
 
+from univention.config_registry import ucr
 from univention.lib.umc import Client, Unauthorized
 
 
@@ -54,15 +55,21 @@ class CLIClient(object):
 
 		args = parser.parse_args()
 
+		if not args.username and not args.bindpwdfile:
+			args.username = '%s$' % (ucr['hostname'],)
+			args.bindpwdfile = '/etc/machine.secret'
+		if args.bindpwdfile:
+			try:
+				with open(args.bindpwdfile) as fd:
+					args.password = fd.read().strip()
+			except IOError:
+				parser.error('Unable to read the password-file "%s".' % (args.bindpwdfile,))
+		else:
+			args.password = None
 		if not args.username:
 			args.username = input('Domain Admin Login: ')
-		args.password = None
-		if args.bindpwdfile:
-			with open(args.bindpwdfile) as fd:
-				args.password = fd.read().strip()
 		if not args.password:
 			args.password = getpass('Password: ')
-
 		try:
 			client = Client(None, args.username, args.password)
 		except Unauthorized as exc:

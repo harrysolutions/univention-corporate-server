@@ -1,3 +1,10 @@
+univention-management-console-module-diagnostic (6.0.0-30) unstable; urgency=medium
+
+  * Bug #54515: allow running univention-run-diagnostic-checks as machine
+    account and use it as default.
+
+ -- Maximilian Janßen <janssen@univention.de>  Wed, 09 Mar 2022 12:55:43 +0100
+
 univention-management-console-module-diagnostic (6.0.0-29) unstable; urgency=medium
 
   * Bug #53455: added code and readability improvements

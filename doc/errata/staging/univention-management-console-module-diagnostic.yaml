@@ -8,4 +8,8 @@ desc: |
  This update addresses the following issue(s):
  * A new diagnostic plugin has been added to detect cases where an LDAP
    schema is missing that is actually still referenced by some objects.
-bug: [53455]
+ * The script `univention-run-diagnostic-check` now displays links
+   in the description of failed tests.
+ * The script `univention-run-diagnostic-check` can now be executed
+   with the machine-account and uses the machine-account as default.
+bug: [50756, 53455, 54515]
