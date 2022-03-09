@@ -26,8 +26,9 @@ UCS system knows two administrative user accounts: *Administrator* and *root*.
 
 Administrator
    The user account *Administrator* is the first domain user and has all domain
-   permissions. The *Administrator* user account can join new systems to the
-   domain and can work with all modules in the UCS management system.
+   permissions. The *Administrator* user account has permission to join new systems to the
+   domain and can work with all modules in the UCS management system. The
+   account can only be defined once in the domain and must never be renamed.
 
    The *Administrator* account is only defined once per domain during the
    installation of the Primary Directory Node. The account password is set
@@ -39,15 +40,19 @@ Administrator
 root
    The user account *root* is the superuser on the local UCS system and has the
    user ID of ``0``. It has all permissions and is equivalent to the *root*
-   account known from other GNU Linux systems.
+   account known from other GNU/Linux systems.
 
    The *root* account is defined and the password is set during installation of
    every UCS system. The account is only for the local UCS system. On other UCS
-   systems administrators should—of course—define different passwords for the
+   systems administrators should—of course—define different passwords for each
    *root* account.
 
    Think of *root* as the primary administrative account for the **local** UCS
    system.
+
+   The *root* account has no permissions and is no valid account in the domain
+   context. The account *root* must not be created as domain account or you risk
+   to lockout the *root* user from the local UCS system.
 
 Domain users and admins
 -----------------------
