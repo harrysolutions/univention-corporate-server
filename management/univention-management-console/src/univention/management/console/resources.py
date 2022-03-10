@@ -172,6 +172,9 @@ class ModuleProcess(object):
 			response = exc.response
 			if response is None:  # (599, 'Timeout while connecting', None)
 				raise CouldNotConnect(exc)
+		except ValueError as exc:  # HTTP GET request with body
+			CORE.warn('Reaching module failed: %s' % (exc,))
+			raise BadRequest(str(exc))
 
 		self.reset_inactivity_timer()
 		raise tornado.gen.Return(response)
