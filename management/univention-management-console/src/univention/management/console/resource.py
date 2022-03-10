@@ -193,6 +193,7 @@ class Resource(RequestHandler):
 			self.request.protocol = 'https'
 		self.request.uri = '/univention%s' % (self.request.uri,)
 
+	@tornado.gen.coroutine
 	def parse_authorization(self):
 		credentials = self.request.headers.get('Authorization')
 		if not credentials:
@@ -212,10 +213,13 @@ class Resource(RequestHandler):
 			raise HTTPError(400)
 
 		sessionid = self.sessionidhash()
+		session = self.current_user
+		result = yield session.authenticate({'locale': self.locale.code, 'username': username, 'password': password})
+		if not session.authenticated:
+			raise UMC_Error(result.message, result.status, result.result)
 
 		ud.debug(ud.MAIN, 99, 'auth: creating session with sessionid=%r' % (sessionid,))
-
-		self.set_session(sessionid, username, password=password)
+		self.set_session(sessionid, session.user.username, password=session.user.password)
 
 	@property
 	def lo(self):

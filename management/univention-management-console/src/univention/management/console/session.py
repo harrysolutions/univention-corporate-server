@@ -160,10 +160,10 @@ class Session(object):
 		# TODO: implement
 
 	@tornado.gen.coroutine
-	def authenticate(self, request):
+	def authenticate(self, args):
 		from .server import pool
-		pam = self.__auth.get_handler(request.body_arguments['locale'])
-		result = yield pool.submit(self.__auth.authenticate, pam, request.body_arguments)
+		pam = self.__auth.get_handler(args['locale'])
+		result = yield pool.submit(self.__auth.authenticate, pam, args)
 		pam.end()
 		self.authenticated = bool(result)
 		if self.authenticated:

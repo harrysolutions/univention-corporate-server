@@ -375,7 +375,7 @@ class Auth(Resource):
 		self.request.body_arguments['auth_type'] = None
 		self.request.body_arguments['locale'] = self.locale.code
 		session = self.current_user
-		result = yield session.authenticate(self.request)
+		result = yield session.authenticate(self.request.body_arguments)
 
 		# create a sessionid if the user is not yet authenticated
 		sessionid = self.create_sessionid(True)
