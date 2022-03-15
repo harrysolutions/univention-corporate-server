@@ -228,7 +228,8 @@ class ComputerObject(univention.admin.handlers.simpleComputer, nagios.Support):
 			if 'posix' in self.options:
 				requested_uid = "%s$" % self['name']
 				try:
-					self.uid = self.request_lock('uid', requested_uid)
+					if not self.exists() or self['name'].lower() != self.oldinfo['name'].lower():
+						self.uid = self.request_lock('uid', requested_uid)
 				except univention.admin.uexceptions.noLock:
 					raise univention.admin.uexceptions.uidAlreadyUsed(requested_uid)
 
