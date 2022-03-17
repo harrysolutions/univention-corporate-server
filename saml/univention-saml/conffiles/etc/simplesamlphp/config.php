@@ -7,6 +7,58 @@
  * $Id: config.php 3246 2013-05-23 11:43:52Z olavmrk $
  */
 
+
+// function copied from lib/SimpleSAML/Utils/HTTP.php of simplesamlphp v1.19.5.
+if (!function_exists('canSetSameSiteNone')) {
+    /**
+     * Determine if the user agent can support cookies being sent with SameSite equal to "None".
+     * Browsers without support may drop the cookie and or treat it as stricter setting
+     * Browsers with support may have additional requirements on setting it on non-secure websites.
+     *
+     * Based on the Azure teams experience rolling out support and Chromium's advice
+     * https://devblogs.microsoft.com/aspnet/upcoming-samesite-cookie-changes-in-asp-net-and-asp-net-core/
+     * https://www.chromium.org/updates/same-site/incompatible-clients
+     * @return bool true if user agent supports a None value for SameSite.
+     *
+     */
+    function canSetSameSiteNone(): bool
+    {
+        $useragent = $_SERVER['HTTP_USER_AGENT'] ?? null;
+        if (!$useragent) {
+            return true;
+        }
+        // All iOS 12 based browsers have no support
+        if (strpos($useragent, "CPU iPhone OS 12") !== false || strpos($useragent, "iPad; CPU OS 12") !== false) {
+            return false;
+        }
+
+        // Safari Mac OS X 10.14 has no support
+        // - Safari on Mac OS X.
+        if (strpos($useragent, "Macintosh; Intel Mac OS X 10_14") !== false) {
+            // regular safari
+            if (strpos($useragent, "Version/") !== false && strpos($useragent, "Safari") !== false) {
+                return false;
+            } elseif (preg_match('|AppleWebKit/[\.\d]+ \(KHTML, like Gecko\)$|', $useragent)) {
+                return false;
+            }
+        }
+
+        // Chrome based UCBrowser may have support (>= 12.13.2) even though its chrome version is old
+        $matches = [];
+        if (preg_match('|UCBrowser/(\d+\.\d+\.\d+)[\.\d]*|', $useragent, $matches)) {
+            return version_compare($matches[1], '12.13.2', '>=');
+        }
+
+        // Chrome 50-69 may have broken SameSite=None and don't require it to be set
+        if (strpos($useragent, "Chrome/5") !== false || strpos($useragent, "Chrome/6") !== false) {
+            return false;
+        }
+        return true;
+    }
+}
+
+$_samesite_none = /*\SimpleSAML\Utils\HTTP::*/canSetSameSiteNone() ? 'None' : null;
+
 require_once('/usr/share/simplesamlphp/lib/univention/lib.php');
 
 @!@
@@ -290,7 +342,31 @@ print("	'session.duration'            =>	%s," % configRegistry.get('saml/idp/ses
 	 * through https. If the user can access the service through
 	 * both http and https, this must be set to FALSE.
 	 */
-	'session.cookie.secure' => FALSE,
+@!@
+print("\t'session.cookie.secure' => %s," % ('TRUE' if configRegistry.is_true('saml/idp/session-cookie/secure') else 'FALSE',))
+@!@
+
+    /*
+     * Set the SameSite attribute in the cookie.
+     *
+     * You can set this to the strings 'None', 'Lax', or 'Strict' to support
+     * the RFC6265bis SameSite cookie attribute. If set to null, no SameSite
+     * attribute will be sent.
+     *
+     * A value of "None" is required to properly support cross-domain POST
+     * requests which are used by different SAML bindings. Because some older
+     * browsers do not support this value, the canSetSameSiteNone function
+     * can be called to only set it for compatible browsers.
+     *
+     * You must also set the 'session.cookie.secure' value above to true.
+     *
+     * Example:
+     *  'session.cookie.samesite' => 'None',
+     */
+@!@
+if configRegistry.get('saml/idp/session-cookie/samesite') in ('Lax', 'Strict', 'None'):
+    print("\t'session.cookie.samesite' => %s," % ("'%s'" % (configRegistry['saml/idp/session-cookie/samesite'],) if configRegistry['saml/idp/session-cookie/samesite'] in ('Strict', 'Lax') else '$_samesite_none',))
+@!@
 
 	/*
 	 * When set to FALSE fallback to transient session on session initialization
@@ -343,6 +419,11 @@ print("	'session.duration'            =>	%s," % configRegistry.get('saml/idp/ses
 	'language.cookie.domain'		=> NULL,
 	'language.cookie.path'		=> '/',
 	'language.cookie.lifetime'		=> (60*60*24*900),
+@!@
+print("\t'language.cookie.secure' => %s," % ('TRUE' if configRegistry.is_true('saml/idp/language-cookie/secure') else 'FALSE',))
+if configRegistry.get('saml/idp/language-cookie/samesite') in ('Lax', 'Strict', 'None'):
+    print("\t'language.cookie.samesite' => %s," % ("'%s'" % (configRegistry['saml/idp/language-cookie/samesite'],) if configRegistry['saml/idp/language-cookie/samesite'] in ('Strict', 'Lax') else '$_samesite_none',))
+@!@
 
 	/**
 	 * Custom getLanguage function called from SimpleSAML_XHTML_Template::getLanguage().
