@@ -29,9 +29,7 @@ def test_acl_user_may_not_read(rad_user, lo, ssp):
 	lo.modify(dn, [('univentionRadiusPassword', [b'old'], [ssp[1]])])
 	output = subprocess.check_output(['univention-ldapsearch', '-D', dn, '-w', password, '-b', dn, 'univentionRadiusPassword'])
 	output = output.decode('utf-8')
-	if 'univentionRadiusPassword:' in output:
-		print(output)
-		raise RuntimeError('%s should not be able to see univentionRadiusPassword' % dn)
+	assert 'univentionRadiusPassword:' not in output
 
 
 def test_acl_user_may_not_write(rad_user, ssp, ucr):
@@ -46,9 +44,7 @@ def test_acl_computer_may_read(rad_user, lo, ssp, ucr_session):
 	lo.modify(dn, [('univentionRadiusPassword', [b'old'], [ssp[1]])])
 	output = subprocess.check_output(['univention-ldapsearch', '-D', ucr_session.get('ldap/hostdn'), '-y', '/etc/machine.secret', '-b', dn, 'univentionRadiusPassword'])
 	output = output.decode('utf-8')
-	if 'univentionRadiusPassword:' not in output:
-		print(output)
-		raise RuntimeError('%s needs to be able to see univentionRadiusPassword' % dn)
+	assert 'univentionRadiusPassword:' in output
 
 
 def test_acl_computer_may_not_write(rad_user, ssp, ucr):
@@ -63,9 +59,7 @@ def test_acl_admin_may_read(rad_user, lo, ssp, ucr):
 	dn, name, password = rad_user
 	output = subprocess.check_output(['univention-ldapsearch', '-D', ucr.get('tests/domainadmin/account'), '-w', ucr.get('tests/domainadmin/pwd'), '-b', dn, 'univentionRadiusPassword'])
 	output = output.decode('utf-8')
-	if 'univentionRadiusPassword:' not in output:
-		print(output)
-		raise RuntimeError('Admin should be able to see univentionRadiusPassword')
+	assert 'univentionRadiusPassword:' in output
 
 
 def test_acl_admin_may_write(rad_user, ssp, ucr):
