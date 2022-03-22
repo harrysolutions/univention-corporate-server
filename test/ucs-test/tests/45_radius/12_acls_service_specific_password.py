@@ -7,21 +7,7 @@
 ## exposure: dangerous
 
 import pytest
-import subprocess
 import univention.admin
-
-
-def radius_auth(username, password):
-	subprocess.check_call([
-		'radtest',
-		'-t',
-		'mschap',
-		username,
-		password,
-		'127.0.0.1:18120',
-		'0',
-		'testing123',
-	])
 
 
 @pytest.fixture
@@ -40,16 +26,16 @@ def credentials(user_type, rad_user, ucr):
 	(True, 'computer'),
 	(True, 'admin'),
 ])
-def test_acl_read_access(rad_user, lo, ssp, allowed, credentials):
+def test_acl_read_access(rad_user, lo, ssp, ucr, allowed, credentials):
 	dn, name, password = rad_user
 	binddn, bindpw = credentials
 	lo.modify(dn, [('univentionRadiusPassword', [b'old'], [ssp[1]])])
-	output = subprocess.check_output(['univention-ldapsearch', '-D', binddn, '-w', bindpw, '-b', dn, 'univentionRadiusPassword'])
-	output = output.decode('utf-8')
+	lo = univention.admin.uldap.access(host=ucr.get('ldap/master'), port=ucr.get('ldap/server/port'), base=ucr.get('ldap/base'), binddn=binddn, bindpw=bindpw, start_tls=2, follow_referral=True)
+	passwords = [(dn, attr) for dn, attr in lo.search(attr=['univentionRadiusPassword']) if 'univentionRadiusPassword' in attr]
 	if allowed:
-		assert 'univentionRadiusPassword:' in output
+		assert passwords
 	else:
-		assert 'univentionRadiusPassword:' not in output
+		assert not passwords
 
 
 @pytest.mark.parametrize('allowed,user_type', [
