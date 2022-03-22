@@ -24,45 +24,45 @@ def radius_auth(username, password):
 	])
 
 
-def test_acl_user_may_not_read(rad_user, lo, ssp):
+@pytest.fixture
+def credentials(user_type, rad_user, ucr):
+	if user_type == 'user':
+		return (rad_user[0], rad_user[2])
+	elif user_type == 'computer':
+		return (ucr.get('ldap/hostdn'), open('/etc/machine.secret').read())
+	elif user_type == 'admin':
+		return (ucr.get('tests/domainadmin/account'), ucr.get('tests/domainadmin/pwd'))
+	assert False
+
+
+@pytest.mark.parametrize('allowed,user_type', [
+	(False, 'user'),
+	(True, 'computer'),
+	(True, 'admin'),
+])
+def test_acl_read_access(rad_user, lo, ssp, allowed, credentials):
 	dn, name, password = rad_user
+	binddn, bindpw = credentials
 	lo.modify(dn, [('univentionRadiusPassword', [b'old'], [ssp[1]])])
-	output = subprocess.check_output(['univention-ldapsearch', '-D', dn, '-w', password, '-b', dn, 'univentionRadiusPassword'])
+	output = subprocess.check_output(['univention-ldapsearch', '-D', binddn, '-w', bindpw, '-b', dn, 'univentionRadiusPassword'])
 	output = output.decode('utf-8')
-	assert 'univentionRadiusPassword:' not in output
+	if allowed:
+		assert 'univentionRadiusPassword:' in output
+	else:
+		assert 'univentionRadiusPassword:' not in output
 
 
-def test_acl_user_may_not_write(rad_user, ssp, ucr):
+@pytest.mark.parametrize('allowed,user_type', [
+	(False, 'user'),
+	(False, 'computer'),
+	(True, 'admin'),
+])
+def test_acl_write_access(rad_user, ssp, ucr, allowed, credentials):
 	dn, name, password = rad_user
-	lo = univention.admin.uldap.access(host=ucr.get('ldap/master'), port=ucr.get('ldap/server/port'), base=ucr.get('ldap/base'), binddn=dn, bindpw=password, start_tls=2, follow_referral=True)
-	with pytest.raises(univention.admin.uexceptions.permissionDenied):
+	binddn, bindpw = credentials
+	lo = univention.admin.uldap.access(host=ucr.get('ldap/master'), port=ucr.get('ldap/server/port'), base=ucr.get('ldap/base'), binddn=binddn, bindpw=bindpw, start_tls=2, follow_referral=True)
+	if allowed:
 		lo.modify(dn, (('univentionRadiusPassword', [b''], [ssp[1]]),))
-
-
-def test_acl_computer_may_read(rad_user, lo, ssp, ucr_session):
-	dn, name, password = rad_user
-	lo.modify(dn, [('univentionRadiusPassword', [b'old'], [ssp[1]])])
-	output = subprocess.check_output(['univention-ldapsearch', '-D', ucr_session.get('ldap/hostdn'), '-y', '/etc/machine.secret', '-b', dn, 'univentionRadiusPassword'])
-	output = output.decode('utf-8')
-	assert 'univentionRadiusPassword:' in output
-
-
-def test_acl_computer_may_not_write(rad_user, ssp, ucr):
-	dn, name, password = rad_user
-	bindpw = open('/etc/machine.secret').read()
-	lo = univention.admin.uldap.access(host=ucr.get('ldap/master'), port=ucr.get('ldap/server/port'), base=ucr.get('ldap/base'), binddn=ucr.get('ldap/host'), bindpw=bindpw, start_tls=2, follow_referral=True)
-	with pytest.raises(univention.admin.uexceptions.permissionDenied):
-		lo.modify(dn, (('univentionRadiusPassword', [b''], [ssp[1]]),))
-
-
-def test_acl_admin_may_read(rad_user, lo, ssp, ucr):
-	dn, name, password = rad_user
-	output = subprocess.check_output(['univention-ldapsearch', '-D', ucr.get('tests/domainadmin/account'), '-w', ucr.get('tests/domainadmin/pwd'), '-b', dn, 'univentionRadiusPassword'])
-	output = output.decode('utf-8')
-	assert 'univentionRadiusPassword:' in output
-
-
-def test_acl_admin_may_write(rad_user, ssp, ucr):
-	dn, name, password = rad_user
-	lo = univention.admin.uldap.access(host=ucr.get('ldap/master'), port=ucr.get('ldap/server/port'), base=ucr.get('ldap/base'), binddn=ucr.get('tests/domainadmin/account'), bindpw=ucr.get('tests/domainadmin/pwd'), start_tls=2, follow_referral=True)
-	lo.modify(dn, (('univentionRadiusPassword', [b''], [ssp[1]]),))
+	else:
+		with pytest.raises(univention.admin.uexceptions.permissionDenied):
+			lo.modify(dn, (('univentionRadiusPassword', [b''], [ssp[1]]),))
