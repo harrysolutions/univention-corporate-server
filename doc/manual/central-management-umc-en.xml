@@ -343,7 +343,7 @@ udm settings/ldapacl remove \
 			<graphic scalefit="1" width="70%" align="center" fileref="illustrations50/umc_coreedition_en.png"/>
 		</figure>
 		<para>
-		  The button <guimenu>Import a license</guimenu> opens a dialogue in which 
+		  The button <guimenu>Import a license</guimenu> opens a dialogue in which
 		  a new license key can be activated (otherwise the core edition license
 		  is used as default license).
 		  A license file can be selected and imported via the button <guimenu>Import from file...</guimenu>.

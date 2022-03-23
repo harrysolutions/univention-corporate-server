@@ -2423,7 +2423,7 @@ univention-config-registry set squid/webports=&quot;80 443&quot;
 				<para>
                     The parameters used to generate the passwords can be
                     adjusted. On a &ucsPrimaryDN; some &ucsUCRV;s have to be
-                    set: 
+                    set:
                     <programlisting language="sh">
                         ucr search password/radius/quality
                     </programlisting>

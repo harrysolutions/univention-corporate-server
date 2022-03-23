@@ -166,19 +166,19 @@ _ifconfig_eth0_ipv4=$(grep "^ *inet " <<<"$_ifconfig_eth0")
 _ip_inet_addr_show_eth0=$(LANG=C ip -f inet addr show eth0)
 
 interfaces_eth0_address=$(grep -Po '^ *inet \K\d+\.\d+\.\d+\.\d+' <<<"$_ip_inet_addr_show_eth0")
-echo "interfaces/eth0/address: $interfaces_eth0_address" 
+echo "interfaces/eth0/address: $interfaces_eth0_address"
 
 _ip_network_CIDR=$(grep -Po '^ *inet \K\d+\.\d+\.\d+\.\d+/\d+' <<<"$_ip_inet_addr_show_eth0")
 
 interfaces_eth0_broadcast=$(grep -Po " broadcast \K\d+\.\d+\.\d+.\d+" <<<"$_ifconfig_eth0_ipv4")
-echo "interfaces/eth0/broadcast: $interfaces_eth0_broadcast" 
+echo "interfaces/eth0/broadcast: $interfaces_eth0_broadcast"
 
 # interfaces_eth0_netmask=$(ip_netmask "$_ip_network_CIDR")
 interfaces_eth0_netmask=$(grep -Po " netmask \K\d+\.\d+\.\d+.\d+" <<<"$_ifconfig_eth0_ipv4")
-echo "interfaces/eth0/netmask: $interfaces_eth0_netmask" 
+echo "interfaces/eth0/netmask: $interfaces_eth0_netmask"
 
 interfaces_eth0_network=$(ip_network "$_ip_network_CIDR")
-echo "interfaces/eth0/network: $interfaces_eth0_network" 
+echo "interfaces/eth0/network: $interfaces_eth0_network"
 
 ucrchanges+=(
     "interfaces/eth0/address=$interfaces_eth0_address" \
@@ -202,7 +202,7 @@ else
 		echo "WARNING: Found UCR docker/container/uuid=$previous_container_uuid" >&2
 		echo "WARNING: Saving as docker/container/previousuuid and unsetting it" >&2
 		ucrchanges+=( "docker/container/previousuuid=$previous_container_uuid" )
-		univention-config-registry unset docker/container/uuid 
+		univention-config-registry unset docker/container/uuid
 	fi
 fi
 
@@ -250,7 +250,7 @@ fi
 
 ## Default is to continue booting the app
 pid1_process="/sbin/init.debian"
-## But if the caller specifies any other executable as $1 then run that instead 
+## But if the caller specifies any other executable as $1 then run that instead
 if [ "$#" -gt 0 ]; then
 	if [ "$1" = "/sbin/init" ]; then
 		## In this case we would recurse, so ignore.

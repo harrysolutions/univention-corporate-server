@@ -463,14 +463,14 @@ univention-app shell demo-docker-app
       All packages in the standard package scope are in <emphasis>maintained</emphasis> status.
       Security updates are provided in a timely manner only for <emphasis>maintained</emphasis> packages.
       The list of <emphasis>maintained</emphasis> packages can be viewed on a UCS system in <filename>univention-errata-level/maintained-packages.txt</filename>.
-    </simpara></listitem>                                   
-  
-    <listitem><simpara>                                     
+    </simpara></listitem>
+
+    <listitem><simpara>
       <emphasis>unmaintained</emphasis> packages are not covered by security updates or other maintenance.
       To check if <emphasis>unmaintained</emphasis> packages are installed, the command <command>univention-list-installed-unmaintained-packages</command> can be executed.
-    </simpara></listitem>                                   
+    </simpara></listitem>
   </itemizedlist>
-  
+
   <para>
     For additional repositories the installation of <emphasis>unmaintained</emphasis> packages is not possible by default.
     To enable installation, the &ucsUCRV; <envar>repository/online/component/.*/unmaintained</envar> must be set to <literal>yes</literal>.
@@ -701,7 +701,7 @@ apt-cache search fax
 		<para>
 		Where <replaceable>{appid}</replaceable> is the name of the app for which the scripts should be executed.
 		</para>
-			
+
 		<para>
 		Script file names are only allowed to consist of lower case letters and numbers (<command>^[a-z0-9]+$</command>).
 		Additionally scripts have to be marked as executable (<command>chmod +x [filename]</command>), because

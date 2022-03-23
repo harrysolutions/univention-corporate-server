@@ -64,7 +64,7 @@
 					The app <emphasis>UCS Dashboard</emphasis> can be installed from the Univention App Center on a
 					server in the domain. Currently, the installation is only possible on the system roles
 					Primary, Backup or &ucsReplicaDN;.
-					The apps <emphasis>UCS Dashboard Database</emphasis> and <emphasis>UCS Dashboard Client</emphasis> 
+					The apps <emphasis>UCS Dashboard Database</emphasis> and <emphasis>UCS Dashboard Client</emphasis>
 					are automatically installed on the same system.
 				</para>
 				<para>
@@ -98,7 +98,7 @@
 					</para>
 					<para>
 						Furthermore, the UCS systems are listed on the dashboard, in a tabular overview, including
-						further information, such as the server role, the installed apps or whether an update is 
+						further information, such as the server role, the installed apps or whether an update is
 						available or not.
 					</para>
 					<para>
@@ -114,7 +114,7 @@
 							<graphic scalefit="1" width="80%" align="center" fileref="illustrations50/dashboard-server.png"/>
 						</figure>
 					<para>
-						By default, the server dashboard is also configured. On this dashboard, 
+						By default, the server dashboard is also configured. On this dashboard,
 						detailed information about individual server systems are shown, such as the CPU- or
 						memory usage or network throughput.
 					</para>

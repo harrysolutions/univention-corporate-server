@@ -924,7 +924,7 @@
 		<section id="user-management:password-changes-by-users:self-service">
 			<title>Password management via Self Service app</title>
 			<para>
-                By installing the UCS components <guimenu>Self Service Backend</guimenu> 
+                By installing the UCS components <guimenu>Self Service Backend</guimenu>
                 and <guimenu>Self Service</guimenu> in the domain via the
 				<guimenu>App Center</guimenu>, users are enabled to take care of their
 				password management without administrator interaction.

@@ -53,7 +53,7 @@ servers.
 .. _quickstart-systemrole:
 
 .. figure:: images/systemrole.png
-   
+
    Selecting the domain setup
 
 During installation, the system can be used for various purposes which
