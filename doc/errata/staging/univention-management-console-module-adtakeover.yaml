@@ -5,7 +5,10 @@ scope: ucs_5.0-0-errata5.0-1
 src: univention-management-console-module-adtakeover
 fix: 7.0.2-7A~5.0.0.202203220829
 desc: |
- This update addresses the following issue:
+ This update addresses the following issues:
  * Performing an Active Directory takeover will work when the original AD
    contains Group Policy Objects that use non ASCII encoding.
-bug: [54196]
+ * During AD domain takeover, samba-tool domain join was started with
+   passing cleartext credentials as part of the command. Credentials are
+   now passed via credentials file.
+bug: [54196,53101]
