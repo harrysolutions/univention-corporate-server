@@ -126,4 +126,10 @@ if [ "$1" = "configure" ] && dpkg --compare-versions "$2" lt-nl "7.0.1-7"; then
 		--append translationLongDescription='"fr_FR" "Autoriser l’accès via RADIUS (802.1x) pour cet utilisateur ou utilisatrice."'
 fi
 
+if [ "$1" = "configure" ] && dpkg --compare-versions "$2" lt-nl "7.0.1-9"; then
+  if [ -f /etc/freeradius/3.0/sites-enabled/default ]; then
+    rm -f /etc/freeradius/3.0/sites-enabled/default
+  fi
+fi
+
 exit 0
