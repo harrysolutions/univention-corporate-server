@@ -148,29 +148,10 @@ Description[en]=Activates further authentication modules for users. If left unde
 Type=str
 Categories=service-radius
 
-[freeradius/conf/vlan/vlan-id]
+[freeradius/vlan-id]
 Description[de]=Default VLan-ID, die allen Clients zugewiesen wird, für die keine andere konfigurierete VLAN-ID gefunden wird. Mögliche Werte: 1,..,4096
 Description[en]=DEfault VLAN-ID assigned to all clients not having any other VLAN-ID configured. Possible values: 1,..,4096
 Type=int
-Default=1
-Categories=service-radius
-
-[freeradius/conf/vlan/check-noneap-macAddress]
-Description[de]= Aktiviert die Zuweisung der VLAN-ID (non-EAP) auf Basis der MAC-Adresse. Mögliche Werte: no, yes
-Description[en]= Activates assigning of VLAN-ID (non-EAP) based on the MAC-address. Possible values: no, yes
-Type=str
-Categories=service-radius
-
-[freeradius/conf/vlan/check-eap-macAddress]
-Description[de]= Aktiviert die Zuweisung der VLAN-ID (EAP mode) auf Basis der MAC-Adresse. Mögliche Werte: no, yes
-Description[en]= Activates assigning of VLAN-ID (EAP mode) based on the MAC-address. Possible values: no, yes
-Type=str
-Categories=service-radius
-
-[freeradius/conf/vlan/check-eap-uid]
-Description[de]= Aktiviert die Zuweisung der VLAN-ID (EAP mode) auf Basis der uid. Mögliche Werte: no, yes
-Description[en]= Activates assigning of VLAN-ID (EAP mode) based on the uid. Possible values: no, yes
-Type=str
 Categories=service-radius
 
 [radius/use-service-specific-password]

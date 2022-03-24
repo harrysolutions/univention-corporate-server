@@ -2,7 +2,9 @@ server custom {
 	listen {
 		type = auth
 		ipaddr = *
-		port = 0
+@!@
+print('\t\tport = %s' % (configRegistry.get('freeradius/conf/port', '0'), ))
+@!@
 		limit {
 			#
 			#  Limit the number of simultaneous TCP connections to the socket
@@ -36,7 +38,9 @@ server custom {
 	}
 	listen {
 		ipaddr = *
-		port = 0
+@!@
+print('\t\tport = %s' % (configRegistry.get('freeradius/conf/accountingport', '0'), ))
+@!@
 		type = acct
 	}
 
@@ -44,7 +48,9 @@ server custom {
 	listen {
 		type = auth
 		ipv6addr = ::	# any.  ::1 == localhost
-		port = 0
+@!@
+print('\t\tport = %s' % (configRegistry.get('freeradius/conf/port', '0'), ))
+@!@
 
 		limit {
 		      max_connections = 16
@@ -55,7 +61,9 @@ server custom {
 
 	listen {
 		ipv6addr = ::
-		port = 0
+@!@
+print('\t\tport = %s' % (configRegistry.get('freeradius/conf/accountingport', '0'), ))
+@!@
 		type = acct
 	}
 
@@ -76,69 +84,86 @@ server custom {
 		#  It takes care of processing the 'raddb/hints' and the
 		#  'raddb/huntgroups' files.
 		preprocess
-		## According to RFC 3580 should sanitize the MAC address to "AA-BB-CC-DD-EE-FF"
-		## see https://tools.ietf.org/html/rfc3580 3.20 & 3.21
-		## see also https://wiki.freeradius.org/guide/mac-auth
-		## This can be achieved by using these functions defined in /etc/freeradius/../policy.d/canonicalization:
-		## rewrite_called_station_id   # For the NAS/WLAN-AP
-		## rewrite_calling_station_id  # For the Client
-		## Unfortunately, OpenLDAP stores the macAddress as "aa:bb:cc:dd:ee:ff" (lowercase and ':' instead of '-')
-		## Therefore we adapt 'rewrite_calling_station_id' to fit our needs:
-		if (Calling-Station-Id =~ /([0-9a-f]{2})[-:]?([0-9a-f]{2})[-:.]?([0-9a-f]{2})[-:]?([0-9a-f]{2})[-:.]?([0-9a-f]{2})[-:]?([0-9a-f]{2})/i) {
-			update request {
-				Calling-Station-Id := "%{tolower:%{1}:%{2}:%{3}:%{4}:%{5}:%{6}}"
-			}
-		}
 	    ## To handle unauthenticated clients based on their MAC address, we check IF we are talking EAP or not:
-		if (!&EAP-Message) {
+		if ((!&EAP-Message) && Calling-Station-Id) {
             # Scenario: known client, but client can't be authenticated via EAP + MSCHAPv2 (not joined (yet), PXE-Boot etc.)
-            # So we are not talking EAP. Therefore we do check the MAC address and the VLAN-ID:
-            if ("%{ldap:ldap:///@%@ldap/base@%@?VlanId?sub?(macAddress=%{Calling-Station-Id})}") {
-                update control {
-                    Auth-Type := Accept
-                }
-                update reply {
-                    Reply-Message := "DEBUG: Non-EAP: MAC found, VLAN ID found - sending VLAN-ID from LDAP object"
-                    Tunnel-Type := VLAN
-                    Tunnel-Medium-Type := IEEE-802
-                    Tunnel-Private-Group-Id := "%{ldap:ldap:///@%@ldap/base@%@?VlanId?sub?(macAddress=%{Calling-Station-Id})}"
+            # So we are not talking EAP. Therefore we do check the MAC address and the VLAN-ID
+            ## According to RFC 3580 should sanitize the MAC address to "AA-BB-CC-DD-EE-FF"
+            ## see https://tools.ietf.org/html/rfc3580 3.20 & 3.21
+            ## see also https://wiki.freeradius.org/guide/mac-auth
+            ## This can be achieved by using these functions defined in /etc/freeradius/../policy.d/canonicalization:
+            ## rewrite_called_station_id   # For the NAS/WLAN-AP
+            ## rewrite_calling_station_id  # For the Client
+            ## Unfortunately, OpenLDAP stores the macAddress as "aa:bb:cc:dd:ee:ff" (lowercase and ':' instead of '-')
+            ## Therefore we adapt 'rewrite_calling_station_id' to fit our needs:
+            if (Calling-Station-Id =~ /([0-9a-f]{2})[-:]?([0-9a-f]{2})[-:.]?([0-9a-f]{2})[-:]?([0-9a-f]{2})[-:.]?([0-9a-f]{2})[-:]?([0-9a-f]{2})/i) {
+                update request {
+                    Calling-Station-Id := "%{tolower:%{1}:%{2}:%{3}:%{4}:%{5}:%{6}}"
                 }
             }
-            ## If we can only find the macAddress but no VLAN ID, send the client to the default VLAN:
-            elsif ("%{ldap:ldap:///@%@ldap/base@%@?macAddress?sub?(macAddress=%{Calling-Station-Id})}") {
-                # accept and send default VLAN ID:
-                update control {
-                    Auth-Type := Accept
+            if ("%{ldap:ldap:///@%@ldap/base@%@?VlanId?cn?sub?(macAddress=%{Calling-Station-Id})}") {
+                if ("%{ldap:ldap:///@%@ldap/base@%@?VlanId?sub?(&(memberUid=%{ldap:ldap:///@%@ldap/base@%@?cn?sub?(macAddress=%{Calling-Station-Id})}$)(VlanId=*))}") {
+                    update control {
+                        Auth-Type := Accept
+                    }
+                    update reply {
+                        Reply-Message := "DEBUG: Non-EAP: MAC found, VLAN ID found - sending VLAN-ID from LDAP object"
+                        Tunnel-Type := VLAN
+                        Tunnel-Medium-Type := IEEE-802
+                        Tunnel-Private-Group-Id := "%{ldap:ldap:///@%@ldap/base@%@?VlanId?sub?(macAddress=%{Calling-Station-Id})}"
+                    }
                 }
-                update reply {
-                    Reply-Message := "DEBUG: Non-EAP: MAC found, but no VLAN ID - sending default VLAN-ID"
-                    Tunnel-Type := VLAN
-                    Tunnel-Medium-Type := IEEE-802
-                    Tunnel-Private-Group-Id := "@%@freeradius/conf/vlan/vlan-id@%@"
+                 ## If we can only find the macAddress but no VLAN ID, send the client to the default VLAN:
+                elsif ("@%@freeradius/vlan-id@%@") {
+                    # accept and send default VLAN ID:
+                    update control {
+                        Auth-Type := Accept
+                    }
+                    update reply {
+                        Reply-Message := "DEBUG: Non-EAP: MAC found, but no VLAN ID - sending default VLAN-ID"
+                        Tunnel-Type := VLAN
+                        Tunnel-Medium-Type := IEEE-802
+                        Tunnel-Private-Group-Id := "@%@freeradius/vlan-id@%@"
+                    }
+                    return
                 }
-                return
             }
-            ## FIXME: isn't here an else missing with update_control { Auth-Type := Reject} or is this BYOD ?
 		}
 		## IF we are talking EAP, follow the default auth config:
 		else {
-			#
-			#  The chap module will set 'Auth-Type := CHAP' if we are
-			#  handling a CHAP request and Auth-Type has not already been set
-			chap
-			#
-			#  If the users are logging in with an MS-CHAP-Challenge
-			#  attribute for authentication, the mschap module will find
-			#  the MS-CHAP-Challenge attribute, and add 'Auth-Type := MS-CHAP'
-			#  to the request, which will cause the server to then use
-			#  the mschap module for authentication.
-			mschap
-			#
+            #
+            #  The chap module will set 'Auth-Type := CHAP' if we are
+            #  handling a CHAP request and Auth-Type has not already been set
+@!@
+auth_type = configRegistry.get('freeradius/conf/auth-type/mschap', 'FALSE')
+
+if auth_type and 'TRUE' == auth_type.upper() or 'YES' == auth_type.upper():
+	print('\t\tchap')
+else:
+	print('#\t\tchap')
+@!@
+            #
+            #  If the users are logging in with an MS-CHAP-Challenge
+            #  attribute for authentication, the mschap module will find
+            #  the MS-CHAP-Challenge attribute, and add 'Auth-Type := MS-CHAP'
+            #  to the request, which will cause the server to then use
+            #  the mschap module for authentication.
+@!@
+auth_type = configRegistry.get('freeradius/conf/auth-type/mschap', 'FALSE')
+
+if auth_type and 'TRUE' == auth_type.upper() or 'YES' == auth_type.upper():
+	print('\t\tmschap')
+else:
+	print('#\t\tmschap')
+@!@			#
 			#  If you are using multiple kinds of realms, you probably
 			#  want to set "ignore_null = yes" for all of them.
 			#  Otherwise, when the first style of realm doesn't match,
 			#  the other styles won't be checked.
-			ntdomain
+			# ntdomain
+@!@
+print('%s' % configRegistry.get('freeradius/conf/realm', 'suffix'))
+@!@
 			#
 			#  This module takes care of EAP-MD5, EAP-TLS, and EAP-LEAP
 			#  authentication.
@@ -161,7 +186,9 @@ server custom {
 			}
 			#
 			#  Read the 'users' file
-			files
+@!@
+print('%s' % configRegistry.get('freeradius/conf/users', 'files'))
+@!@
 			#
 			#  The ldap module will set Auth-Type to LDAP if it has not
 			#  already been set
@@ -220,14 +247,32 @@ server custom {
 		#  A back-end database listed in the 'authorize' section
 		#  MUST supply a CLEAR TEXT password.  Encrypted passwords
 		#  won't work.
-		Auth-Type CHAP {
-			chap
-		}
-		#
-		#  MSCHAP authentication.
-		Auth-Type MS-CHAP {
-			mschap
-		}
+@!@
+auth_type = configRegistry.get('freeradius/conf/auth-type/mschap', 'FALSE')
+
+if auth_type and 'TRUE' == auth_type.upper() or 'YES' == auth_type.upper():
+	print('\t\tAuth-Type CHAP {')
+	print('\t\t\tchap')
+	print('\t\t}')
+else:
+	print('#      Auth-Type CHAP {')
+	print('#\\ttchap')
+	print('#      }')
+@!@
+	#
+	#  MSCHAP authentication.
+@!@
+auth_type = configRegistry.get('freeradius/conf/auth-type/mschap', 'FALSE')
+
+if auth_type and 'TRUE' == auth_type.upper() or 'YES' == auth_type.upper():
+	print('\t\tAuth-Type MS-CHAP {')
+	print('\t\t\tmschap')
+	print('\t\t}')
+else:
+	print('#      Auth-Type MS-CHAP {')
+	print('#\\ttmschap')
+	print('#      }')
+@!@
 		#
 		#  See 'man getpwent' for information on how the 'unix'
 		#  module checks the users password.  Note that packets
@@ -256,83 +301,174 @@ server custom {
 		#  request, and many NAS boxes are broken.
 		acct_unique
 		# Setting suffix as realm default MSCHAP needs ntdomain
-		ntdomain
-		#
-		#  Read the 'acct_users' file
-		files
+        #	ntdomain
+@!@
+print('%s' % configRegistry.get('freeradius/conf/realm', 'suffix'))
+@!@
+
+	    #
+	    #  Read the 'acct_users' file
+        #	files
+@!@
+print('%s' % configRegistry.get('freeradius/conf/users', 'files'))
+@!@
 	}
 	#
 	#  Accounting.  Log the accounting data.
 	#
 	accounting {
-		#
-		#  Create a 'detail'ed log of the packets.
-		#  Note that accounting requests which are proxied
-		#  are also logged in the detail file.
-		detail
-		#
-		#  For Simultaneous-Use tracking.
-		#
-		#  Due to packet losses in the network, the data here
-		#  may be incorrect.  There is little we can do about it.
-	#	 radutmp
-		#  Filter attributes from the accounting response.
-		attr_filter.accounting_response
-	}
+        #  Update accounting packet by adding the CUI attribute
+        #  recorded from the corresponding Access-Accept
+        #  use it only if your NAS boxes do not support CUI themselves
+    #	cui
+        #
+        #  Create a 'detail'ed log of the packets.
+        #  Note that accounting requests which are proxied
+        #  are also logged in the detail file.
+        detail
+    #	daily
+
+        #  Update the wtmp file
+        #
+        #  If you don't use "radlast", you can delete this line.
+        unix
+
+        #
+        #  For Simultaneous-Use tracking.
+        #
+        #  Due to packet losses in the network, the data here
+        #  may be incorrect.  There is little we can do about it.
+    #	radutmp
+    #	sradutmp
+
+        #  Return an address to the IP Pool when we see a stop record.
+    #	main_pool
+
+        #
+        #  Log traffic to an SQL database.
+        #
+        #  See "Accounting queries" in mods-available/sql
+        -sql
+
+        #
+        #  If you receive stop packets with zero session length,
+        #  they will NOT be logged in the database.  The SQL module
+        #  will print a message (only in debugging mode), and will
+        #  return "noop".
+        #
+        #  You can ignore these packets by uncommenting the following
+        #  three lines.  Otherwise, the server will not respond to the
+        #  accounting request, and the NAS will retransmit.
+        #
+    #	if (noop) {
+    #		ok
+    #	}
+
+        #
+        #  Instead of sending the query to the SQL server,
+        #  write it into a log file.
+        #
+    #	sql_log
+
+        #  Cisco VoIP specific bulk accounting
+    #	pgsql-voip
+
+        # For Exec-Program and Exec-Program-Wait
+        exec
+
+        #  Filter attributes from the accounting response.
+        attr_filter.accounting_response
+
+        #
+        #  See "Autz-Type Status-Server" for how this works.
+        #
+    #	Acct-Type Status-Server {
+    #
+    #	}
+    }
+
 	#  Session database, used for checking Simultaneous-Use. Either the radutmp
 	#  or rlm_sql module can handle this.
 	#  The rlm_sql module is *much* faster
 	session {
 	#	radutmp
+	#
+	#  See "Simultaneous Use Checking Queries" in mods-available/sql
+    #	sql
 	}
+
 	#  Post-Authentication
 	#  Once we KNOW that the user has been authenticated, there are
 	#  additional steps we can take.
 	post-auth {
+		#  For EAP-TTLS and PEAP, add the cached attributes to the reply.
+        #  The "session-state" attributes are automatically cached when
+        #  an Access-Challenge is sent, and automatically retrieved
+        #  when an Access-Request is received.
+        #
+        #  The session-state attributes are automatically deleted after
+        #  an Access-Reject or Access-Accept is sent.
+        #
+        update {
+            &reply: += &session-state:
+        }
+        #
+	    #  After authenticating the user, do another SQL query.
+	    #
+	    #  See "Authentication Logging Queries" in mods-available/sql
+	    -sql
+
+        # For Exec-Program and Exec-Program-Wait
+        exec
+
 		# Load module: ldap
 		ldap
-		# Rewrite username if it is a machine account:
-		if ("%{request:User-Name}" =~ /^host\/(.*)@%@ldap/base@%@$/) {
+		# Rewrite username if it is a machine account. The krb5PrincipalName is passed as User-Name in the request in this case.
+		if ("%{request:User-Name}" =~ /^host\/(.*).@%@domainname@%@$/) {
 			update request {
-				User-Name := "%{1}$"    #FIXME Why is the host name overwriting the User-Name and why a trailing dollar sign???
+				User-Name := "%{1}$"    # The uid attribute in the ldap object is filled with the host name and a trailing dollar sign.
 			}
 		}
-		# Check if the user exists (and is not a macAddress) and do post-auth actions
+		# Check if the user or machine exists and do post-auth actions
 		# else do nothing in post-auth
 		# This way we also make sure that we do not change the VLAN ID again if the non-EAP-auth (MAC address auth) succeeded before (see above)
-		if ("%{ldap:ldap:///@%@ldap/base@%@?vlan-ID?sub?(uid=%{User-Name})}") {
-			# We now assume that we have a user or machine account that has been authenticated via username+password
-			# First check for known computer objects (= have a macAddress) and the corresponding VLAN ID
-			# Scenario: Known client, client has been authenticated via EAP + MSCHAPv2
-			# We only check for VLANs that are trusted networks (no BYOD). The most common cases are checked first.
-			if ("%{ldap:ldap:///@%@ldap/base@%@?VlanId?sub?(&(uid=%{User-Name})(macAddress=*))}") {
+		if ("%{ldap:ldap:///@%@ldap/base@%@?uid?sub?(uid=%{User-Name})}") {
+			# For known users as well for known machines we take the vlan-id from the group the user/machine is member of.
+			# In case there are assignments for several groups the first vlan-id is automatically taken.
+			if ("%{ldap:ldap:///@%@ldap/base@%@?VlanId?sub?(&(memberUid=%{User-Name})(univentionObjectType=groups/group))}") {
 				update reply {
-					Reply-Message := "DEBUG: Assigning VLAN-ID from computer object"
+					Reply-Message := "DEBUG: Assigning VLAN-ID from user / computer object"
 					Tunnel-Type := VLAN
 					Tunnel-Medium-Type := IEEE-802
-					Tunnel-Private-Group-Id := "%{ldap:ldap:///@%@ldap/base@%@?VlanId?sub?(&(uid=%{User-Name})(macAddress=*))}"
+					Tunnel-Private-Group-Id := "%{ldap:ldap:///@%@ldap/base@%@?VlanId?sub?(&(memberUid=%{User-Name})(univentionObjectType=groups/group))}"
 				}
 			}
-			# If we can not find a known computer object, we look for VLAN IDs at the user object.
-			# Scenario: Known user, unknown client, user has been authenticated via EAP + MSCHAPv2
-			elsif ("%{ldap:ldap:///@%@ldap/base@%@?VlanId?sub?(&(uid=%{User-Name})(objectClass=inetOrgPerson))}") {  #FIXME: is the objectclass correct?
-				update reply {
-					Reply-Message := "DEBUG: Assigning VLAN-ID from user object"
-					Tunnel-Type := VLAN
-					Tunnel-Medium-Type := IEEE-802
-					Tunnel-Private-Group-Id := "%{ldap:ldap:///@%@ldap/base@%@?VlanId?sub?(&(uid=%{User-Name})(objectClass=inetOrgPerson))}"  #FIXME: check objectclass
-				}
-			}
-			# Finally, if we can't find a matching VLAN ID for the user or client in LDAP, we return the default VLAN ID
-			else {
+			# If we can't find a matching VLAN ID for the user or machine client in LDAP, we return the default VLAN ID, if configured.
+			# If no default vlan-id is configured in ucr we do not return any vlan information
+			elsif ("@%@freeradius/vlan-id@%@") {
 				update reply {
 					Reply-Message := "DEBUG: Not found, assigning default VLAN-ID"
 					Tunnel-Type := VLAN
 					Tunnel-Medium-Type := IEEE-802
-					Tunnel-Private-Group-Id := "@%@freeradius/conf/vlan/vlan-id@%@"
+					Tunnel-Private-Group-Id := "@%@freeradius/vlan-id@%@"
 				}
 			}
 		}
+        #  Remove reply message if the response contains an EAP-Message
+        remove_reply_message_if_eap
+        Post-Auth-Type REJECT {
+            # log failed authentications in SQL, too.
+            -sql
+            attr_filter.access_reject
+
+            # Insert EAP-Failure message if the request was
+            # rejected by policy instead of because of an
+            # authentication failure
+            eap
+
+            #  Remove reply message if the response contains an EAP-Message
+            remove_reply_message_if_eap
+        }
 	}
 	#
 	#  When the server decides to proxy a request to a home server,
