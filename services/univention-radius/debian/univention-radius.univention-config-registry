@@ -75,6 +75,18 @@ Variables: freeradius/conf/port
 Variables: freeradius/conf/accountingport
 
 Type: file
+File: etc/freeradius/3.0/sites-available/custom
+User: root
+Group: freerad
+Mode: 640
+Variables: freeradius/conf/auth-type/mschap
+Variables: freeradius/conf/auth-type/mschap/.*
+Variables: freeradius/conf/realm
+Variables: freeradius/conf/users
+Variables: freeradius/conf/port
+Variables: freeradius/conf/accountingport
+
+Type: file
 File: etc/freeradius/3.0/sites-available/inner-tunnel
 User: root
 Group: freerad
