@@ -1717,6 +1717,15 @@ class object(univention.admin.handlers.simpleLdap):
 				except univention.admin.uexceptions.noLock:
 					raise univention.admin.uexceptions.mailAddressUsed(self['mailPrimaryAddress'])
 
+		# get lock for mailAlternativeAddress
+		if not self.exists() or self.hasChanged('mailAlternativeAddress'):
+			if self['mailAlternativeAddress'] and self['mailAlternativeAddress'].lower() != (self.oldinfo.get('mailAlternativeAddress', None) or '').lower():
+				# unique for mailAlternativeAddress
+				try:
+					self.request_lock('mailAlternativeAddress', self['mailAlternativeAddress'])
+				except univention.admin.uexceptions.noLock:
+					raise univention.admin.uexceptions.mailAddressUsed(self['mailAlternativeAddress'])
+
 		if self['unlock'] == '1':
 			self['locked'] = u'0'
 		if self.hasChanged('disabled') and self['disabled'] == '0' and not self.hasChanged('accountActivationDate'):
