@@ -17,7 +17,7 @@ import time
 import sys
 import os
 import logging
-from argparse import Namespace  # noqa F401
+from argparse import Namespace  # noqa: F401
 
 
 class UCSInstallation(object):

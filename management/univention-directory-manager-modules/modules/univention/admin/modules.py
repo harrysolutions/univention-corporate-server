@@ -39,7 +39,7 @@ import sys
 import copy
 import locale
 import importlib
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Text, Tuple, Union  # noqa F401
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Text, Tuple, Union  # noqa: F401
 
 import six
 import ldap
