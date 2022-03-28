@@ -342,7 +342,7 @@ described under :ref:`central-policies-assign`.
 |UCSUMC| modules
 ----------------
 
-.. _central-management-umc-introduction:
+.. _central-management-umc:
 
 Introduction
 ~~~~~~~~~~~~
