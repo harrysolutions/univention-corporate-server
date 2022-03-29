@@ -1,0 +1,13 @@
+product: ucs
+release: "5.0"
+version: [1]
+scope: ucs_5.0-0-errata5.0-1
+src: univention-appcenter
+fix: 
+desc: |
+ This update addresses the following issue:
+ * Change order of populating ini file - app specific goes at the end so
+   we don't overwrite them by appcenter values. Additionally, environment
+   values passed while doing this. Appcenter filter UCR converts values
+   to string prior writing.
+bug: [54612]
