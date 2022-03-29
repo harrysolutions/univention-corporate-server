@@ -455,7 +455,7 @@ print('%s' % configRegistry.get('freeradius/conf/users', 'files'))
 			}
 		}
         #  Remove reply message if the response contains an EAP-Message
-        remove_reply_message_if_eap
+        # remove_reply_message_if_eap   #FIXME ??
         Post-Auth-Type REJECT {
             # log failed authentications in SQL, too.
             -sql
