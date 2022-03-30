@@ -101,8 +101,8 @@ print('\t\tport = %s' % (configRegistry.get('freeradius/conf/accountingport', '0
                     Calling-Station-Id := "%{tolower:%{1}:%{2}:%{3}:%{4}:%{5}:%{6}}"
                 }
             }
-            if ("%{ldap:ldap:///@%@ldap/base@%@?VlanId?cn?sub?(macAddress=%{Calling-Station-Id})}") {
-                if ("%{ldap:ldap:///@%@ldap/base@%@?VlanId?sub?(&(memberUid=%{ldap:ldap:///@%@ldap/base@%@?cn?sub?(macAddress=%{Calling-Station-Id})}$)(VlanId=*))}") {
+            if ("%{ldap:ldap:///@%@ldap/base@%@?cn?sub?(macAddress=%{Calling-Station-Id})}") {
+                if ("%{ldap:ldap:///@%@ldap/base@%@?univentionVlanId?sub?(&(memberUid=%{ldap:ldap:///@%@ldap/base@%@?cn?sub?(macAddress=%{Calling-Station-Id})}$)(univentionObjectType=groups/group)(univentionVlanId=*))}") {
                     update control {
                         Auth-Type := Accept
                     }
@@ -110,7 +110,7 @@ print('\t\tport = %s' % (configRegistry.get('freeradius/conf/accountingport', '0
                         Reply-Message := "DEBUG: Non-EAP: MAC found, VLAN ID found - sending VLAN-ID from LDAP object"
                         Tunnel-Type := VLAN
                         Tunnel-Medium-Type := IEEE-802
-                        Tunnel-Private-Group-Id := "%{ldap:ldap:///@%@ldap/base@%@?VlanId?sub?(macAddress=%{Calling-Station-Id})}"
+                        Tunnel-Private-Group-Id := "%{ldap:ldap:///@%@ldap/base@%@?univentionVlanId?sub?(&(memberUid=%{ldap:ldap:///@%@ldap/base@%@?cn?sub?(macAddress=%{Calling-Station-Id})}$)(univentionObjectType=groups/group)(univentionVlanId=*))}"
                     }
                 }
                  ## If we can only find the macAddress but no VLAN ID, send the client to the default VLAN:
@@ -124,6 +124,14 @@ print('\t\tport = %s' % (configRegistry.get('freeradius/conf/accountingport', '0
                         Tunnel-Type := VLAN
                         Tunnel-Medium-Type := IEEE-802
                         Tunnel-Private-Group-Id := "@%@freeradius/vlan-id@%@"
+                    }
+                    return
+                }
+                ## If we can only find the macAddress but the computer is in no group with VLAN ID, just authentcaite, but set no VLAN-ID
+                else {
+                    # accept and send default VLAN ID:
+                    update control {
+                        Auth-Type := Accept
                     }
                     return
                 }
@@ -435,12 +443,12 @@ print('%s' % configRegistry.get('freeradius/conf/users', 'files'))
 		if ("%{ldap:ldap:///@%@ldap/base@%@?uid?sub?(uid=%{User-Name})}") {
 			# For known users as well for known machines we take the vlan-id from the group the user/machine is member of.
 			# In case there are assignments for several groups the first vlan-id is automatically taken.
-			if ("%{ldap:ldap:///@%@ldap/base@%@?VlanId?sub?(&(memberUid=%{User-Name})(univentionObjectType=groups/group))}") {
+			if ("%{ldap:ldap:///@%@ldap/base@%@?univentionVlanId?sub?(&(memberUid=%{User-Name})(univentionObjectType=groups/group)(univentionVlanId=*))}") {
 				update reply {
 					Reply-Message := "DEBUG: Assigning VLAN-ID from user / computer object"
 					Tunnel-Type := VLAN
 					Tunnel-Medium-Type := IEEE-802
-					Tunnel-Private-Group-Id := "%{ldap:ldap:///@%@ldap/base@%@?VlanId?sub?(&(memberUid=%{User-Name})(univentionObjectType=groups/group))}"
+					Tunnel-Private-Group-Id := "%{ldap:ldap:///@%@ldap/base@%@?univentionVlanId?sub?(&(memberUid=%{User-Name})(univentionObjectType=groups/group)(univentionVlanId=*))}"
 				}
 			}
 			# If we can't find a matching VLAN ID for the user or machine client in LDAP, we return the default VLAN ID, if configured.

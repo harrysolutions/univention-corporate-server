@@ -286,7 +286,7 @@ udm settings/extended_attribute create "$@" --ignore_exists \
 udm settings/extended_attribute create "$@" --ignore_exists \
 	--position "cn=custom attributes,cn=univention,$ldap_base" \
 	--set name='univentionVlanIDGroups' \
-	--set CLIName='VlanId' \
+	--set CLIName='vlanId' \
 	--set shortDescription='Virtual LAN ID' \
 	--append translationShortDescription='"de_DE" "Virtual LAN ID"' \
 	--append translationShortDescription='"fr_FR" "Virtual LAN ID"' \
