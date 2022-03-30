@@ -68,6 +68,24 @@ class LoginHandler(PortalHandler):
 		portal = self.find_portal()
 		portal.login_request(self)
 
+class AppNavHandler(PortalHandler):
+	def get(self):
+		try:
+			req_lang = self.request.arguments.get("lang")[0].decode()
+		except:
+			req_lang = "de_DE"
+		portal = self.find_portal()
+		if not portal:
+			raise tornado.web.HTTPError(404)
+		user = portal.get_user(self)
+		visible_content = portal.get_visible_content(user, False)
+
+		# todo: figure out how we get the actual portal url?
+		portal_url = f"{self.request.protocol}://{self.request.host_name}"
+
+		nav_answer = portal.get_nav_items(user, req_lang, portal_url)
+		self.write(nav_answer)
+
 
 class JsonHandler(PortalHandler):
 	def get(self):
@@ -127,6 +145,7 @@ def make_app():
 		[
 			(r"/.+/login/", LoginHandler, {"portals": portals}),
 			(r"/.+/portal.json", JsonHandler, {"portals": portals}),
+			(r"/.+/apps.json", AppNavHandler, {"portals": portals}),
 		]
 	)
 

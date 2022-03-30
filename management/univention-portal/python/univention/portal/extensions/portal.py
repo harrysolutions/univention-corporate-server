@@ -32,14 +32,19 @@
 
 import os.path
 import time
+import re
+import json
+import ipaddress
 
 import requests
 import requests.exceptions
 from six import with_metaclass
+from urllib.parse import urlparse
 
 import univention.portal.config as config
 from univention.portal import Plugin
 from univention.portal.log import get_logger
+from univention.config_registry import ConfigRegistry
 
 
 class Portal(with_metaclass(Plugin)):
@@ -88,6 +93,9 @@ class Portal(with_metaclass(Plugin)):
 		self.portal_cache = portal_cache
 		self.authenticator = authenticator
 
+		self.ucr = ConfigRegistry()
+		self.ucr.load()
+
 	def get_cache_id(self):
 		return self.portal_cache.get_id()
 
@@ -132,6 +140,176 @@ class Portal(with_metaclass(Plugin)):
 			"folder_dns": visible_folder_dns,
 			"category_dns": visible_category_dns,
 		}
+
+	def get_nav_items(self, user, lang, portal_url):
+		entries = self.portal_cache.get_entries()
+		categories = self.portal_cache.get_categories()
+		visible_entry_dns = self._filter_entry_dns(entries.keys(), entries, user, False)
+		entry_dns_out = {}
+		for dn in visible_entry_dns:
+			if dn in entries.keys():
+				entry_dns_out[dn] = entries[dn]["name"]
+
+		cats_out = []
+		for nav_category_dn, category_data in categories.items():
+			cat_out = {}
+			# 1. cat identifier
+			"""
+			We don't actually have 'identifier' or 'name' in the portal cache
+			for categories, we need to get it from the dn...
+			"""
+			cat_identifier = nav_category_dn.split(",")[0].split("=")[1]
+			cat_out["identifier"] = cat_identifier
+
+			# 2. cat display name
+			try:
+				cat_out["display_name"] = category_data["display_name"][lang]
+			except:
+				cat_out["display_name"] = category_data["display_name"]["de_DE"]
+
+			# 3. entries
+			cat_out["entries"] = []
+			for entry_dn in category_data["entries"]:
+				if entry_dn in 	visible_entry_dns:
+					cat_out["entries"].append(self._transform_entry_for_nav(entries[entry_dn], entry_dn, lang, portal_url))
+
+			cats_out.append(cat_out)
+		return {'categories': cats_out}
+
+	def _get_portal_path(self):
+		portal_path_list = self.ucr.get("portal/paths")
+		if portal_path_list is not None:
+			portal_path = portal_path_list.split(",")[0]
+			if portal_path.endswith("/"):
+				portal_path = portal_path[:-1]
+		else:
+			portal_path = "univention/portal"
+		return portal_path
+
+	def _transform_entry_for_nav(self, entry, entry_dn, lang, portal_url):
+		entry_out = {}
+		# 1. indentifier
+		entry_out["identifier"] = entry_dn.split(",")[0].split("=")[1]
+
+		# 2. icon_url
+		icon_url = entry["logo_name"]
+		portal_path = self._get_portal_path()
+		if icon_url is None:
+			entry_out["icon_url"] = None
+		elif icon_url.startswith('.'):
+			entry_out["icon_url"] = portal_url + portal_path + icon_url[1:]
+		else:
+			entry_out["icon_url"] = portal_url + portal_path + icon_url
+
+		# 3. display_name
+		try:
+			entry_out["display_name"] = entry["name"][lang]
+		except:
+			entry_out["display_name"] = entry["name"]["de_DE"]
+
+		# 4. link
+		if len(entry["links"]) > 0:
+			entry_out["link"] = self._choose_url(entry["links"], lang, portal_url)
+		else:
+			entry_out["link"] = None
+
+		# 5. tabname
+		portal_tab_exprs = self._get_tab_regexes()
+		if portal_tab_exprs is None or entry_out["link"] is None:
+			entry_out["tabname"] = entry_out["identifier"]
+		else:
+			for expr_tabname_pair in portal_tab_exprs:
+				if re.match(expr_tabname_pair['expr'], entry_out["link"]):
+					entry_out["tabname"] = expr_tabname_pair["tab_id"]
+					break
+				if entry_out.get("tabname") is None:
+					entry_out["tabname"] = entry_out["identifier"]
+
+		# 6. description
+		try:
+			entry_out["description"] = entry["description"][lang]
+		except:
+			entry_out["description"] = entry["description"]["de_DE"]
+
+		# 7. keywords
+		entry_out["keywords"] = None
+
+		return entry_out
+
+	def _get_tab_regexes(self):
+		# Find our portal id (dn), return a list of dictionaries containing tabname:regex mappings
+		portal_dn = self.portal_cache.get_portal()["dn"]
+		tab_exprs_str = self.ucr.get("portal/tabname-exprs")
+		if tab_exprs_str is None:
+			return None
+		else:
+			tab_exprs_dict = json.loads(tab_exprs_str)
+			portal_tab_exprs = tab_exprs_dict.get(portal_dn)
+			if portal_tab_exprs is None:
+				return None
+		return portal_tab_exprs
+
+	def _choose_url(self, links_list, lang, portal_url):
+		"""
+		We need to choose from potentially multiple variations on a URL. Rules:
+				- filter on the requested language otherwise fallback to en_US
+				- always fqdn before ip
+				- always https before http
+		"""
+		links_by_lang = {}
+		for link_dict in links_list:
+			if link_dict["locale"] not in links_by_lang.keys():
+				links_by_lang[link_dict["locale"]] = []
+			links_by_lang[link_dict["locale"]].append(link_dict["value"])
+		if lang in links_by_lang.keys():
+			chosen_lang_links = links_by_lang[lang]
+		elif 'de_DE' in links_by_lang.keys():
+			chosen_lang_links = links_by_lang["de_DE"]
+		elif 'en_US' in links_by_lang.keys():
+			chosen_lang_links = links_by_lang["en_US"]
+		else:
+			# if all else fails return the first language in the dict?
+			chosen_lang_links = links_by_lang[links_by_lang.keys()[0]]
+
+		fqdn_parsed_links, ipaddr_parsed_links, path_parsed_links = [], [], []
+		for link in chosen_lang_links:
+			parsed = urlparse(link)
+			check_ip_fq = self._ip_or_fqdn(parsed.netloc)
+			if check_ip_fq == "fqdn":
+				fqdn_parsed_links.append({'link': link, 'parsed': parsed})
+			elif check_ip_fq == "ip":
+				ipaddr_parsed_links.append({'link': link, 'parsed': parsed})
+			elif parsed.netloc == "":
+				path_parsed_links.append({'link': link, 'parsed': parsed})
+
+		if len(fqdn_parsed_links) > 0:
+			for linkdict in fqdn_parsed_links:
+				if linkdict['parsed'].scheme == "https":
+					return linkdict["link"]
+			# if we are here, we had fqdn links but none https; return the first fqdn link from list
+			return fqdn_parsed_links[0]["link"]
+		elif len(ipaddr_parsed_links) > 0:
+			for linkdict in ipaddr_parsed_links:
+				if linkdict['parsed'].scheme == "https":
+					return linkdict['link']
+			# same as above (todo: compact / dedupe code)
+			return ipaddr_parsed_links[0]["link"]
+		elif len(path_parsed_links) > 0:
+			return portal_url + path_parsed_links[0]["link"]
+		# if we are here, we have no suitable links at all
+		return None
+
+
+	def _ip_or_fqdn(self, netloc):
+		fqdn_re = re.compile('(?=^.{4,253}$)(^((?!-)[a-zA-Z0-9-]{1,63}(?<!-)\.)+[a-zA-Z]{2,63}\.?$)')
+		try:
+			ip_addy = ipaddress.ip_address(netloc)
+			return "ip"
+		except ValueError:
+			if fqdn_re.search(netloc):
+				return "fqdn"
+			else:
+				return None
 
 	def get_user_links(self, content):
 		links = self.portal_cache.get_user_links()

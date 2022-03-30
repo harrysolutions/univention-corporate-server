@@ -38,3 +38,8 @@ Description[en]=If activated, a warning is displayed if the browser version used
 Type=str
 Categories=portal
 
+[portal/tabname-exprs]
+Description[en]=A JSON representation of a python dictionary representing, per portal dn, expression/result pairs for setting tab names in apps.json output
+Type=str
+Categories=portal
+
