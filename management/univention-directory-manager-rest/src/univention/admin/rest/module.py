@@ -3068,12 +3068,6 @@ class Object(FormBase, Resource):
 				raise TypeError()
 
 	def set_patch_properties(self, module, obj, op, property_name, value):
-		def _parse_complex_syntax_input(value):
-			if '"' not in value:
-				return value.split(' ')
-			else:
-				return [x.strip() for x in value.split('"') if x.strip()]
-
 		try:
 			prop = module.module.property_descriptions[property_name]
 		except KeyError:
@@ -3082,7 +3076,7 @@ class Object(FormBase, Resource):
 			raise
 
 		if value is not None and univention.admin.syntax.is_syntax(prop.syntax, univention.admin.syntax.complex):
-			value = _parse_complex_syntax_input(value)
+			value = prop.syntax.parse_command_line(value)
 
 		current_values = obj[property_name] if prop.multivalue else [obj[property_name]]
 		current_values = list(current_values or [])
