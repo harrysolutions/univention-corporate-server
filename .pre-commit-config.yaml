@@ -13,8 +13,15 @@ repos:
                   |^base/univention-app-appliance/\
                   "
     -   id: check-yaml
-        exclude: '/conffiles/.*\.yaml$'
+        exclude: "/conffiles/.*[.]yaml$"
     -   id: check-merge-conflict
+    -   id: pretty-format-json
+        exclude: "/conffiles/.*[.]json$\
+                  |base/univention-system-setup/city-data/.*\\.json$\
+                  "
+        args:
+          - --autofix
+          - --no-ensure-ascii
     -   id: trailing-whitespace
         exclude: "^base/univention-config-registry/tests/unwrap/\
                   |^base/univention-lib/unittests/fstab$\
