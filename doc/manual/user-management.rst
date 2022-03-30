@@ -18,6 +18,10 @@ changes do not need to be subsequently configured on different individual
 systems. Moreover, this also avoids subsequent errors arising from
 inconsistencies between the individual datasets.
 
+.. _users-types:
+
+.. rubric:: User account types
+
 There are three different types of users in UCS:
 
 1. **Normal user accounts** have all available properties. These users can log
@@ -36,6 +40,10 @@ There are three different types of users in UCS:
    accessed via the UMC module :guilabel:`LDAP directory` (see
    :ref:`central-navigation`).
 
+.. _users-recommendation-usernames:
+
+.. rubric:: Recommendation for username definition
+
 One very important and required attribute for user accounts is the *username*. To
 avoid conflicts with the different tools handling user accounts in UCS, adhere
 to the following recommendations for the definition of usernames:
@@ -53,7 +61,7 @@ The recommendation results in the following regular expression:
 ``^[a-z][a-z0-9-]{2,18}[a-z0-9]$``.
 
 Besides the recommendation, usernames also contain underscores (``_``) and upper
-case ASCII letters in practice.  Consider the recommendation as a guideline and
+case ASCII letters in practice. Consider the recommendation as a guideline and
 not a rule and keep potential side-effects in mind when defining usernames
 outside the recommendation.
 
@@ -134,10 +142,8 @@ User management module - General tab
      - The last name of the user is to be entered here.
 
    * - User name
-     - This is the name, by which the user logs into the system. The name has to
-       begin with a letter which has to be followed by: letters a-z in lower
-       case, numerals 0-9, dots, hyphens, or underlines. User names may not
-       contain blank spaces.
+     - This is the name, by which the user logs into the system. For recommended
+       characters for the user, see :ref:`users-recommendation-usernames`.
 
        In order to ensure compatibility to non-UCS systems the creation of users
        which are only distinguished from each other by upper and lower case
