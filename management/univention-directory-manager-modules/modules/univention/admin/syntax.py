@@ -191,7 +191,7 @@ class ISyntax(object):
 		return text
 
 	def parse_command_line(self, value):
-		return self.parse(value)
+		return value
 
 	@classmethod
 	def new(self):
@@ -5581,13 +5581,14 @@ class PortalCategorySelection(simple):
 	subsyntaxes = [(_('Portal Category'), PortalCategoryV2), (_('Portal Entry'), PortalEntrySelection)]
 	subsyntax_names = ('portal-category', 'portal-entry',)
 
+	def parse_command_line(self, value):
+		try:
+			return json.loads(value)
+		except ValueError:
+			raise univention.admin.uexceptions.valueInvalidSyntax(_("Value has to be in valid json format"))
+
 	@classmethod
 	def parse(self, texts, minn=None):
-		if isinstance(texts, six.string_types):  # for UDM-CLI
-			try:
-				texts = json.loads(texts)
-			except ValueError:
-				raise univention.admin.uexceptions.valueInvalidSyntax(_("Value has to be in valid json format"))
 		for text in texts:
 			if len(text) < len(self.subsyntaxes):
 				raise univention.admin.uexceptions.valueInvalidSyntax(_("not enough arguments"))
