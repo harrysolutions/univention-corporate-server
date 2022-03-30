@@ -257,6 +257,10 @@ class ISyntax(object):
 		"""
 		return text
 
+	@classmethod
+	def normalize(cls, value):
+		return cls.parse(value)
+
 	def parse_command_line(self, value):
 		return value
 
@@ -773,6 +777,12 @@ class UDM_Objects(ISyntax, _UDMObjectOrAttribute):
 		if self.key == 'dn':
 			return univention.admin.types.DistinguishedNameType
 		return univention.admin.types.StringType
+
+	@classmethod
+	def normalize(cls, value):
+		if cls.key == 'dn':
+			return univention.admin.uldap.DN(value)
+		return super(UDM_Objects, cls).normalize(value)
 
 	@classmethod
 	def parse(self, text):
@@ -3413,6 +3423,10 @@ class ldapDn(simple):
 	error_message = _("Not a valid LDAP DN")
 
 	type_class = univention.admin.types.DistinguishedNameType
+
+	@classmethod
+	def normalize(cls, value):
+		return univention.admin.uldap.DN(value)
 
 	@classmethod
 	def get_widget(cls, prop):

@@ -263,54 +263,33 @@ def object_input(module, object, input, append=None, remove=None):
 					out.append('WARNING: file not found: %s' % values)
 			else:
 				values = [module.property_descriptions[key].syntax.parse_command_line(x) for x in values]
-				current_values = list(object[key] or [])
-				if current_values == ['']:
-					current_values = []
-
-				for val in values:
-					if val in current_values:
-						out.append('WARNING: cannot append %s to %s, value exists' % (val, key))
-					else:
-						current_values.append(val)
-
-				if not module.property_descriptions[key].multivalue:
+				for value in values:
 					try:
-						current_values = current_values[-1]
-					except IndexError:
-						current_values = None
-
-				try:
-					object[key] = current_values
-				except univention.admin.uexceptions.valueInvalidSyntax as errmsg:
-					raise OperationFailed(out, 'E: Invalid Syntax: %s' % (errmsg,))
+						object.append_value(key, value)
+					except univention.admin.uexceptions.noProperty:
+						raise OperationFailed(out, "WARNING: No attribute with name %s in this module, value not appended." % (key,))
+					except univention.admin.uexceptions.valueNotSet as exc:
+						raise OperationFailed(out, "WARNING: cannot append %s to %s: %s" % (value, key, exc))
+					except univention.admin.uexceptions.valueInvalidSyntax as errmsg:
+						raise OperationFailed(out, 'E: Invalid Syntax: %s' % (errmsg,))
 
 	if remove:
 		for key, values in remove.items():
-			current_values = [object[key]] if not module.property_descriptions[key].multivalue else list(object[key])
-			if values is None:
-				current_values = []
-			else:
-				vallist = [values] if isinstance(values, six.string_types) else values
-				vallist = [module.property_descriptions[key].syntax.parse_command_line(x) for x in vallist]
-
-				for val in vallist:
-					try:
-						normalized_val = module.property_descriptions[key].syntax.parse(val)
-					except (univention.admin.uexceptions.valueInvalidSyntax, univention.admin.uexceptions.valueError):
-						normalized_val = None
-
-					if val in current_values:
-						current_values.remove(val)
-					elif normalized_val is not None and normalized_val in current_values:
-						current_values.remove(normalized_val)
-					else:
-						out.append("WARNING: cannot remove %s from %s, value does not exist" % (val, key))
-			if not module.property_descriptions[key].multivalue:
-				try:
-					current_values = current_values[0]
-				except IndexError:
-					current_values = None
-			object[key] = current_values
+			try:
+				if values is None:
+					object.remove_value(key, values)
+					continue
+				for value in values:
+					value = module.property_descriptions[key].syntax.parse_command_line(value)
+					#try:  # TODO: remove?! move into normalize()
+					#	value = module.property_descriptions[key].syntax.parse(value)
+					#except (univention.admin.uexceptions.valueInvalidSyntax, univention.admin.uexceptions.valueError):
+					#	pass
+					object.remove_value(key, value)
+			except univention.admin.uexceptions.noProperty:
+				out.append("WARNING: No attribute with name %s in this module, value not removed." % (key,))
+			except univention.admin.uexceptions.valueNotSet as exc:
+				out.append("WARNING: cannot remove %s from %s: %s" % (value, key, exc))
 
 	if input:
 		for key, value in input.items():
