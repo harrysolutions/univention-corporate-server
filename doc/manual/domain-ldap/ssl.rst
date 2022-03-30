@@ -32,7 +32,7 @@ settings`.
 
    If the UCS domain contains more than one system, all other host certificates
    need to be reissued after changing the root certificate!  The procedure
-   required for this is documented in @@u:@@sdb>1183</u:sdb>.
+   required for this is documented in :uv:kb:`Renewing the SSL certificates <37>`.
 
 The UCS-CA is always found on the |UCSPRIMARYDN|. A copy of the CA is stored on
 every |UCSBACKUPDN|, which is synchronized with the CA on the |UCSPRIMARYDN| by
@@ -65,7 +65,7 @@ expire soon (the warning period can be specified with the |UCSUCRV|
 :envvar:`ssl/validity/warning`; the standard value is 30 days).
 
 The renewal of the root certificate and the other host certificates is
-documented in @@u:@@sdb>1183</u:sdb>.
+documented in :uv:kb:`Renewing the SSL certificates <37>`.
 
 On UCS systems, a Cron job verifies the validity of the local computer
 certificate and the root certificate daily and records the expiry date in the
