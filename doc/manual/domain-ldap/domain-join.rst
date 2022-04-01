@@ -47,6 +47,8 @@ system features on the |UCSPRIMARYDN|).
 Subsequent domain joins with univention-join
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+.. program:: univention-join
+
 :command:`univention-join` retrieves a number of essential parameters
 interactively; however, it can also be configured using a number of parameters:
 

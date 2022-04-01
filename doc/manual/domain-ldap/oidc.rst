@@ -46,33 +46,26 @@ The same is also possible from the command line:
 
 The command parameters are:
 
-.. option:: name
-
+``name``
    the service name displayed in the web interface during login.
 
-
-.. option:: clientid
-
+``clientid``
    must be identical here and in the connected service (*shared
    secret*).
 
-.. option:: secret
-
+``secret``
    must be identical here and in the connected service (*shared
    secret*).
 
-.. option:: trusted
-
+``trusted``
    should be set to ``yes`` by default. Otherwise, the
    user will be prompted for confirmation to transfer their user
    attributes to the service.
 
-.. option:: applicationtype
-
+``applicationtype``
    should be set to ``web`` for Internet services.
 
-.. option:: redirectURI
-
+``redirectURI``
    URL of the login endpoint, which can be found in the documentation of
    the connected service. If a service is accessible via several URLs or
    should it also be accessible via IP address, all possible addresses
