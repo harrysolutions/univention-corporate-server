@@ -635,7 +635,7 @@ class Domain(PersistentCached):
 				elif dev.type == Disk.TYPE_NETWORK:
 					dev.source = source.attrib['protocol']
 				elif dev.type == Disk.TYPE_VOLUME:
-					dev.source = "{pool}:{volume}" % source.attrib
+					dev.source = "%(pool)s:%(volume)s" % source.attrib
 				else:
 					raise NodeError(_('Unknown disk type: %(type)s'), type=dev.type)
 			target = disk.find('target', namespaces=XMLNS)
