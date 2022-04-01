@@ -12,12 +12,13 @@ Univention Corporate Server - Manual for users and administrators
    software
    user-management
    groups
-   computers
+   computers/index
    windows
-   idm-cloud
+   appendix/index
+
+.. idm-cloud
    ip-config
    shares
    print-services
    mail
    nagios
-   appendix/index
