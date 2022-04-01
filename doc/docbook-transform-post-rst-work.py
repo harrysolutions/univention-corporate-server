@@ -274,7 +274,7 @@ class ReplacementSystemitem(ReplacementBase):
         return r"``\2``"
 
     def replace(self):
-        pattern = re.compile(r'@@systemitem@@( |\n)class="username">(.+)</systemitem>')
+        pattern = re.compile(r'@@systemitem@@( |\n)class=".+">(.+)</systemitem>')
         result, replacements = pattern.subn(self.substitute_pattern, self.content)
         logging.info("%s replacements for the keyword >%s<.", replacements, self.keyword)
         return result
