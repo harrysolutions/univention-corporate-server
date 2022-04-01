@@ -874,20 +874,18 @@ The evaluation of the |UCSUCR| variables on a UCS system comprises four stages:
 * The local variables are overruled by policy variables which are usually
   sourced from the directory service
 
-* The :option:`--schedule` option is used to set local variables which are only
+* The ``--schedule`` option is used to set local variables which are only
   intended to apply for a certain period of time. This level of the |UCSUCR| is
   reserved for local settings which are automated by time-controlled mechanisms
   in |UCSUCS|.
 
-* When the :option:`--force` option is used in setting a local variable,
-  settings adopted from the directory service and variables from the schedule
-  level are overruled and the given value for the local system fixed instead. An
-  example:
+* When the ``--force`` option is used in setting a local variable, settings
+  adopted from the directory service and variables from the schedule level are
+  overruled and the given value for the local system fixed instead. An example:
 
   .. code-block:: console
 
      $ univention-config-registry set --force mail/messagesizelimit=1000000
-
 
 If a variable is set which is overwritten by a superordinate policy, a warning
 message is given.
@@ -921,6 +919,8 @@ right-clicking and selecting :guilabel:`Delete`.
 Using the command line front end
 --------------------------------
 
+.. program:: ucr
+
 The command line interface of |UCSUCR| is run using the
 :command:`univention-config-registry` command. Alternatively, the short form
 :command:`ucr` can be used.
@@ -930,20 +930,24 @@ The command line interface of |UCSUCR| is run using the
 Querying a UCR variable
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-A single |UCSUCR| variable can be queried with the parameter
-:option:`get`:
+.. option:: get
 
-.. code-block:: console
+   A single |UCSUCR| variable can be queried with the parameter
+   :option:`get`:
 
-   $ univention-config-registry get ldap/server/ip
+   .. code-block:: console
+
+      $ univention-config-registry get ldap/server/ip
 
 
-The parameter :option:`dump` can also be used to display all currently set
-variables:
+.. option:: dump
 
-.. code-block:: console
+   The parameter :option:`dump` can also be used to display all currently set
+   variables:
 
-   $ univention-config-registry dump
+   .. code-block:: console
+
+      $ univention-config-registry dump
 
 
 .. _computers-setting-ucr-variables:
@@ -951,13 +955,15 @@ variables:
 Setting UCR variables
 ^^^^^^^^^^^^^^^^^^^^^
 
-The parameter :option:`set` is used to set a variable. The variable can be given
-any name consisting exclusively of letters, full stops, figures, hyphens and
-forward slashes.
+.. option:: set
 
-.. code-block:: console
+   The parameter :option:`set` is used to set a variable. The variable can be given
+   any name consisting exclusively of letters, full stops, figures, hyphens and
+   forward slashes.
 
-   $ univention-config-registry set VARIABLENAME=VALUE
+   .. code-block:: console
+
+      $ univention-config-registry set VARIABLENAME=VALUE
 
 
 If the variable already exists, the content is updated; otherwise, a new entry
@@ -997,21 +1003,23 @@ when assigning values.
 Searching for variables and set values
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The parameter :option:`search` can be used to search for a variable. This
-command searches for variable names which contain ``nscd`` and displays these
-with their current assignments:
+.. option:: search
 
-.. code-block:: console
+   The parameter :option:`search` can be used to search for a variable. This
+   command searches for variable names which contain ``nscd`` and displays these
+   with their current assignments:
 
-   $ univention-config-registry search nscd
+   .. code-block:: console
+
+      $ univention-config-registry search nscd
 
 
-Alternatively, searches can also be performed for set variable values. This
-request searches for all variables set to ``primary.example.com``:
+   Alternatively, searches can also be performed for set variable values. This
+   request searches for all variables set to ``primary.example.com``:
 
-.. code-block:: console
+   .. code-block:: console
 
-   $ univention-config-registry search --value primary.example.com
+      $ univention-config-registry search --value primary.example.com
 
 
 Search templates in the form of regular expressions can also be used in
@@ -1023,13 +1031,15 @@ https://docs.python.org/2/library/re.html.
 Deleting UCR variables
 ^^^^^^^^^^^^^^^^^^^^^^
 
-The parameter :option:`unset` is used to delete a variable. The following
-example deletes the variable :envvar:`dns/forwarder2`. It is also possible here
-to specify several variables to be deleted:
+.. option:: unset
 
-.. code-block:: console
+   The parameter :option:`unset` is used to delete a variable. The following
+   example deletes the variable :envvar:`dns/forwarder2`. It is also possible here
+   to specify several variables to be deleted:
 
-   $ univention-config-registry unset dns/forwarder2
+   .. code-block:: console
+
+      $ univention-config-registry unset dns/forwarder2
 
 
 .. _computers-regeneration-of-configuration-files-from-their-template:
@@ -1037,13 +1047,15 @@ to specify several variables to be deleted:
 Regeneration of configuration files from their template
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The parameter :option:`commit` is used to regenerate a configuration file from
-its template. The name of the configuration file is entered as a parameter,
-e.g.:
+.. option:: commit
 
-.. code-block:: console
+   The parameter :option:`commit` is used to regenerate a configuration file
+   from its template. The name of the configuration file is entered as a
+   parameter, e.g.:
 
-   $ univention-config-registry commit /etc/samba/smb.conf
+   .. code-block:: console
+
+      $ univention-config-registry commit /etc/samba/smb.conf
 
 
 As UCR templates are generally regenerated automatically when UCR variables are
@@ -1058,12 +1070,14 @@ generally necessary to regenerate all the configuration files.
 Sourcing variables in shell scripts
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The parameter :option:`shell` is used to display |UCSUCR| variables and their
-current assignments in a format that can be used in shell scripts.
+.. option:: shell
 
-.. code-block:: console
+   The parameter :option:`shell` is used to display |UCSUCR| variables and their
+   current assignments in a format that can be used in shell scripts.
 
-   $ univention-config-registry shell ldap/server/name
+   .. code-block:: console
+
+      $ univention-config-registry shell ldap/server/name
 
 
 Different conversions are involved in this: forward slashes in variable names
