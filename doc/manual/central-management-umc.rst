@@ -1074,6 +1074,8 @@ functions of the web interface are also available in the command line interface.
 Parameters of the command line interface
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+.. program:: udm
+
 A complete list of available modules is displayed if the :command:`udm`` is run
 with the ``modules`` parameter:
 
